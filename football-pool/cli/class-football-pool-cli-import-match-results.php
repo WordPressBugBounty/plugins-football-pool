@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2025 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -67,7 +67,7 @@ class Football_Pool_CLI_Import_Match_Results {
 	 *     +----------+-----------+--------------+----------+----------+---------------+
 	 */
 	public function __invoke( $args, $assoc_args ) {
-		$file = ( isset( $assoc_args['file'] ) ? $assoc_args['file'] : false );
+		$file = ( $assoc_args['file'] ?? false );
 		if ( isset( $assoc_args['test'] ) ) {
 			$dry_run = ( $assoc_args['test'] === true );
 		} else {

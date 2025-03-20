@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2025 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -648,7 +648,7 @@ class Football_Pool_Admin {
 	}
 	
 	public static function text_input_field( $key, $value, $type = 'regular-text', $capability = '' ) {
-		if ( $capability == '' || ( $capability != '' && current_user_can( $capability ) ) ) {
+		if ( $capability == '' || current_user_can( $capability ) ) {
 			$output = '<input name="' . esc_attr( $key ) . '" type="text" id="' . esc_attr( $key ) 
 					. '" value="' . esc_attr( $value ) . '" class="' . esc_attr( $type ) . '">';
 		} else {
@@ -1272,13 +1272,7 @@ class Football_Pool_Admin {
 		
 		$onclick_val = "jQuery('#action, #form_action').val('{$action_val}');" . $onclick_val;
 		
-		submit_button( 
-				$text, 
-				'primary', 
-				$action_val, 
-				$wrap, 
-				array( "onclick" => $onclick_val ) 
-		);
+		submit_button( $text, 'primary', $action_val, $wrap, ["onclick" => $onclick_val] );
 	}
 
 	/**

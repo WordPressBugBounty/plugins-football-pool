@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2025 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -116,10 +116,12 @@ class Football_Pool_Admin_Users extends Football_Pool_Admin {
 				
 		switch ( $action ) {
 			case 'bulk_extra':
+				check_admin_referer( FOOTBALLPOOL_NONCE_ADMIN );
 				self::bulk_extra( $bulk_ids, $league_id );
 				self::notice( __( 'Changes saved.', 'football-pool' ) );
 				break;
 			case 'list_email':
+				check_admin_referer( FOOTBALLPOOL_NONCE_ADMIN );
 				self::list_email_addresses();
 				break;
 			case 'save':

@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2025 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -960,8 +960,8 @@ class Football_Pool_Shortcodes {
 		$output = '';
 		
 		if ( $use_querystring === 'yes' ) {
-			$match = Football_Pool_Utils::get_int( 'match', 0 );
-			$question = Football_Pool_Utils::get_int( 'question', 0 );
+			$match = Football_Pool_Utils::get_int( 'match' );
+			$question = Football_Pool_Utils::get_int( 'question' );
 		}
 		
 		if ( is_numeric( $match ) || is_numeric( $question ) ) {
@@ -972,7 +972,7 @@ class Football_Pool_Shortcodes {
 				$matches = $pool->matches;
 				$match_info = $matches->get_match_info( $match );
 				if ( count( $match_info ) > 0 ) {
-					if ( $matches->always_show_predictions || $match_info['match_is_editable'] == false ) {
+					if ( $matches->always_show_predictions || ! $match_info['match_is_editable'] ) {
 						$output .= $stats->show_predictions_for_match( $match_info );
 					}
 				}
@@ -982,7 +982,7 @@ class Football_Pool_Shortcodes {
 			if ( $question > 0 ) {
 				$question_info = $pool->get_bonus_question_info( $question );
 				if ( $question_info ) {
-					if ( $pool->always_show_predictions || $question_info['question_is_editable'] == false ) {
+					if ( $pool->always_show_predictions || ! $question_info['question_is_editable'] ) {
 						$output .= $stats->show_answers_for_bonus_question( $question );
 					}
 				}

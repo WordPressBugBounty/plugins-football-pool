@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2025 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -23,7 +23,7 @@
 /*
  * Plugin Name: Football pool
  * Author: Antoine Hurkmans
- * Author URI: mailto:wordpressfootballpool@gmail.com
+ * Author URI: https://profiles.wordpress.org/antoineh/
  * Plugin URI: http://wordpress.org/support/plugin/football-pool
  * Description: This plugin adds a fantasy sports pool to your blog. Play against other users, predict outcomes of matches and earn points.
  * Tags: pool, football, prediction, sports, game
@@ -32,14 +32,14 @@
  * Domain Path: /languages
  * Requires at least: 4.8
  * Requires PHP: 7.4
- * Version: 2.12.2
+ * Version: 2.12.3
  */
 
-const FOOTBALLPOOL_DB_VERSION = '2.12.2';
+const FOOTBALLPOOL_DB_VERSION = '2.12.3';
 
 if ( wp_doing_cron() ) {
 	// Let's not load Football Pool during cron events.
-	// Maybe in a future version I can add some cron actions. But right now we have none.
+	// Maybe in a future version I have some cron actions. But right now we have none.
 	return;
 }
 

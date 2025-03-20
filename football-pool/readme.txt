@@ -2,8 +2,8 @@
 Contributors: AntoineH
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=S83YHERL39GHA
 Tags: pool, football, prediction, sports, game
-Tested up to: 6.6
-Stable tag: 2.12.2
+Tested up to: 6.7.2
+Stable tag: 2.12.3
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -181,6 +181,9 @@ Minimum PHP requirement has changed to 7.4.0.
 After upgrading to version 2.10.0 a ranking calculation is needed (e.g. from the options page). Please back up your database before updating!!
 
 == Changelog ==
+= 2.12.3 =
+* Bug fix: Fix for CSRF vulnerability.
+
 = 2.12.2 =
 * Bug fix: some parts of the code did not cast the league to int when passing it to the get_pool_ranking_limited() function. Thanks to Colin for reporting.
 

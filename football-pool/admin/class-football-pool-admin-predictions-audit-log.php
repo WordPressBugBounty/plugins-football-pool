@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2025 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -45,9 +45,11 @@ class Football_Pool_Admin_Predictions_Audit_Log extends Football_Pool_Admin {
 
 		switch ( $action ) {
 			case 'truncate':
+				check_admin_referer( FOOTBALLPOOL_NONCE_ADMIN );
 				self::truncate();
 				break;
 			case 'truncate-confirmed':
+				check_admin_referer( FOOTBALLPOOL_NONCE_ADMIN );
 				self::truncate_confirmed();
 			default:
 				self::view();
