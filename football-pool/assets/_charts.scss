@@ -1,5 +1,6 @@
 /* div.chart { border: 1px solid #000; } */
 
+//noinspection SassScssResolvedByNameOnly
 .charts-container {
 	@include flexbox();
 	flex-direction: row;

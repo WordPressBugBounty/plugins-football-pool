@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -59,7 +59,7 @@ class Football_Pool_Statistics_Page {
 	
 	public function page_content(): string
 	{
-		global $pool;
+		$pool = footballpool();
 		$user_selector = '';
 		/** @noinspection HtmlUnknownTarget */
 		$output = sprintf( '<form action="%s" method="get">', get_page_link() );
@@ -122,7 +122,7 @@ class Football_Pool_Statistics_Page {
 							( $selected ? ' selected' : '' ),
 							$row['user_id'],
 							( $selected ? 'checked="checked" ' : '' ),
-							$pool->user_name( $row['user_id'] )
+							$pool->user_name( (int) $row['user_id'] )
 						);
 					}
 					$user_selector .= '</ol></div>';

@@ -3,7 +3,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -158,8 +158,8 @@ class Football_Pool_Teams {
 			$group_order = $wpdb->get_var( $sql );
 			wp_cache_set( $cache_key, $group_order, FOOTBALLPOOL_WPCACHE_PERSISTENT );
 		}
-		
-		return ( $group_order ) ? (integer) $group_order : 0;
+
+		return is_null( $group_order ) ? 0 : (int) $group_order;
 	}
 	
 	public function print_lines( $teams ): string
@@ -238,7 +238,7 @@ class Football_Pool_Teams {
 	}
 	
 	/* get an array containing all the team names (those that are real and active) */
-	private function get_team_names() {
+	private function get_team_names(): array {
 		$team_names = [];
 		foreach( $this->team_info as $team ) {
 			$team_names[$team['id']] = $team['team_name'];
@@ -247,7 +247,7 @@ class Football_Pool_Teams {
 	}
 	
 	/* get an array with all the team_flags (for real and active teams) */
-	private function get_team_flags() {
+	private function get_team_flags(): array {
 		$flags = [];
 		foreach( $this->team_info as $team ) {
 			$flags[$team['id']] = $team['team_flag'];

@@ -3,7 +3,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2025 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -28,44 +28,48 @@
 defined( 'ABSPATH' ) or die( 'Cannot access widgets directly.' );
 add_action( 'widgets_init', function() { register_widget( 'Football_Pool_Group_Widget' ); } );
 
-// dummy var for translation files
-$fp_translate_this = __( 'Group Widget', 'football-pool' );
-$fp_translate_this = __( 'this widget displays the tournament standing for a group.', 'football-pool' );
-$fp_translate_this = __( 'standing', 'football-pool' );
-$fp_translate_this = __( 'Show this group', 'football-pool' );
-$fp_translate_this = __( 'Layout of the widget', 'football-pool' );
-
 class Football_Pool_Group_Widget extends Football_Pool_Widget {
-	protected $widget = array(
-		'name' => 'Group Widget',
-		'description' => 'this widget displays the tournament standing for a group.',
-		'do_wrapper' => true, 
-		
-		'fields' => array(
-			array(
-				'name' => 'Title',
-				'desc' => '',
-				'id' => 'title',
-				'type' => 'text',
-				'std' => 'standing'
-			),
-			array(
-				'name'    => 'Show this group',
-				'desc'    => '',
-				'id'      => 'group',
-				'type'    => 'select',
-				'options' => [] // get data from the database later on
-			),
-			array(
-				'name'    => 'Layout of the widget',
-				'desc'    => '',
-				'id'      => 'layout',
-				'type'    => 'select',
-				'options' => [] // get data later on
-			),
-		)
-	);
-	
+	protected $widget = [];
+
+	public function __construct() {
+		$this->widget = array(
+			'name' => __( 'Group Widget', 'football-pool' ),
+			'description' => __( 'this widget displays the tournament standing for a group.', 'football-pool' ),
+			'do_wrapper' => true,
+
+			'fields' => array(
+				array(
+					'name' => __( 'Title', 'football-pool' ),
+					'desc' => '',
+					'id' => 'title',
+					'type' => 'text',
+					'std' => __( 'standing', 'football-pool' )
+				),
+				array(
+					'name'    => __( 'Show this group', 'football-pool' ),
+					'desc'    => '',
+					'id'      => 'group',
+					'type'    => 'select',
+					'options' => [] // get data from the database later on
+				),
+				array(
+					'name'    => __( 'Layout of the widget', 'football-pool' ),
+					'desc'    => '',
+					'id'      => 'layout',
+					'type'    => 'select',
+					'options' => [] // get data later on
+				),
+			)
+		);
+
+		$classname = str_replace( '_', '', get_class( $this ) );
+		parent::__construct(
+			$classname,
+			$this->widget['name'] ?? $classname,
+			$this->widget['description']
+		);
+	}
+
 	public function html( string $title, array $args, array $instance ) {
 		extract( $args );
 		
@@ -101,12 +105,4 @@ class Football_Pool_Group_Widget extends Football_Pool_Widget {
 		);
 	}
 
-	public function __construct() {
-		$classname = str_replace( '_', '', get_class( $this ) );
-		parent::__construct(
-			$classname, 
-			( $this->widget['name'] ?? $classname ),
-			$this->widget['description']
-		);
-	}
 }

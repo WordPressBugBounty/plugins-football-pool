@@ -1,4 +1,5 @@
 /* new flex layout */
+//noinspection SassScssResolvedByNameOnly
 .matchinfo.new-layout {
 	width: 100%;
 	@include flexbox();
@@ -48,7 +49,9 @@
 			@include flex(1);
 			justify-content: space-between;
 		}
-
+		.matchdate, .time {
+			font-size: 1.2em;
+		}
 		.time {
 			text-align: right;
 		}
@@ -113,6 +116,7 @@
 
 	div.home, div.away {
 		font-weight: bolder;
+		font-size: 1.2em;
 	}
 
 	.score {
@@ -188,6 +192,7 @@ table.matchinfo.new-layout {
 }
 
 /* classic layout */
+//noinspection SassScssResolvedByNameOnly
 table.matchinfo {
 	border-spacing: 0 .25rem;
 	border-collapse: separate;
@@ -328,6 +333,7 @@ table.prediction-table-questions a:hover, .match-table a:hover {
 	text-decoration: underline;
 }
 
+//noinspection SassScssResolvedByNameOnly
 @media ( max-width: $mobile-width ) {
 	/* match and prediction table */
 	table.matchinfo {

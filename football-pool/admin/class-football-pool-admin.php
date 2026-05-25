@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2025 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -545,14 +545,20 @@ class Football_Pool_Admin {
 		
 		return $value;
 	}
-	
-	public static function the_datetime_input( $key, $value ) {
+
+	/**
+	 * @param $key
+	 * @param $value
+	 *
+	 * @return string
+	 * @throws Exception
+	 */
+	public static function the_datetime_input( $key, $value ): string {
 		if ( $value !== '' && ! is_null( $value ) ) {
 			if ( is_object( $value ) ) {
 				$date = $value;
 			} else {
 				//$date = DateTime::createFromFormat( 'Y-m-d H:i', $value );
-				/** @noinspection PhpUnhandledExceptionInspection */
 				$date = new DateTime( Football_Pool_Utils::date_from_gmt ( $value ) );
 			}
 			$year = $date->format( 'Y' );
@@ -563,39 +569,48 @@ class Football_Pool_Admin {
 		} else {
 			$year = $month = $day = $hour = $minute = '';
 		}
-		
+
+		// Year
 		$input = sprintf( '<input name="%1$s_y" type="text" id="%1$s_y" value="%2$s" class="with-hint date-y"
 							title="yyyy" maxlength="4">'
 							, esc_attr( $key )
 							, esc_attr( $year )
 				);
 		$input .= '-';
+		// Month
 		$input .= sprintf( '<input name="%1$s_m" type="text" id="%1$s_m" value="%2$s" class="with-hint date-m"
 							title="mm" maxlength="2">'
 							, esc_attr( $key )
 							, esc_attr( $month )
 				);
 		$input .= '-';
+		// Day
 		$input .= sprintf( '<input name="%1$s_d" type="text" id="%1$s_d" value="%2$s" class="with-hint date-d"
 							title="dd" maxlength="2">'
 							, esc_attr( $key )
 							, esc_attr( $day )
 				);
 		$input .= '&nbsp;';
+		// Hours
 		$input .= sprintf( '<input name="%1$s_h" type="text" id="%1$s_h" value="%2$s" class="with-hint date-h"
 							title="hr" maxlength="2">'
 							, esc_attr( $key )
 							, esc_attr( $hour )
 				);
 		$input .= ':';
+		// Minutes
 		$input .= sprintf( '<input name="%1$s_i" type="text" id="%1$s_i" value="%2$s" class="with-hint date-i"
 							title="mn" maxlength="2">'
 							, esc_attr( $key )
 							, esc_attr( $minute )
 				);
+
 		return $input;
 	}
-	
+
+	/**
+	 * @throws Exception
+	 */
 	public static function datetime_input( $label, $key, $value, $description = '', $extra_attr = ''
 									, $depends_on = '' ) {
 		$input = self::the_datetime_input( $key, $value );
@@ -754,13 +769,13 @@ class Football_Pool_Admin {
 			case 'dropdown':
 			case 'select':
 			case 'selectbox':
-				self::dropdown_input( $option[1], $option[2], $option[3], $option[4], $option[5], isset( $option[6] ) ? $option[6] : '', '', isset( $option[7] ) ? $option[7] : '' );
+				self::dropdown_input( $option[1], $option[2], $option[3], $option[4], $option[5], $option[6] ?? '', '', $option[7] ?? '' );
 				break;
 			case 'radiolist':
-				self::radiolist_input( $option[1], $option[2], $option[3], $option[4], isset( $option[5] ) ? $option[5] : '', isset( $option[6] ) ? $option[6] : '' );
+				self::radiolist_input( $option[1], $option[2], $option[3], $option[4], $option[5] ?? '', $option[6] ?? '' );
 				break;
 			case 'checkbox':
-				self::checkbox_input( $option[1], $option[2], $option[3], $option[4], isset( $option[5] ) ? $option[5] : '' );
+				self::checkbox_input( $option[1], $option[2], $option[3], $option[4], $option[5] ?? '' );
 				break;
 			case 'hidden':
 				self::hidden_input( $option[2], $option[3] );
@@ -770,20 +785,20 @@ class Football_Pool_Admin {
 				break;
 			case 'date':
 			case 'datetime':
-				self::datetime_input( $option[1], $option[2], $option[3], ( isset( $option[4] ) ? $option[4] : '' ) );
+				self::datetime_input( $option[1], $option[2], $option[3], $option[4] ?? '' );
 				break;
 			case 'datetimepicker':
-				self::datetimepicker_input( $option[1], $option[2], $option[3], ( isset( $option[4] ) ? $option[4] : '' ) );
+				self::datetimepicker_input( $option[1], $option[2], $option[3], $option[4] ?? '' );
 				break;
 			case 'multiline':
 			case 'textarea':
-				self::textarea_input( $option[1], $option[2], $option[3], $option[4], ( isset( $option[5] ) ? $option[5] : '' ), ( isset( $option[6] ) ? $option[6] : '' ) );
+				self::textarea_input( $option[1], $option[2], $option[3], $option[4], $option[5] ?? '', $option[6] ?? '' );
 				break;
 			case 'integer':
 			case 'string':
 			case 'text':
 			default:
-				self::text_input( $option[1], $option[2], $option[3], $option[4], ( isset( $option[5] ) ? $option[5] : 'regular-text' ), ( isset( $option[6] ) ? $option[6] : '' ) );
+				self::text_input( $option[1], $option[2], $option[3], $option[4], $option[5] ?? 'regular-text', $option[6] ?? '' );
 				break;
 		}
 	}
@@ -1083,9 +1098,10 @@ class Football_Pool_Admin {
 		echo '</table>';
 	}
 
-	public static function empty_scorehistory( $ranking_id = 'all', $scorehistory = null ) {
-		global $wpdb, $pool;
+	public static function empty_scorehistory( $ranking_id = 'all', $scorehistory = null ): bool {
+		global $wpdb;
 		$prefix = FOOTBALLPOOL_DB_PREFIX;
+		$pool = footballpool();
 		
 		if ( $scorehistory === null ) {
 			$scorehistory = $pool->get_score_table();

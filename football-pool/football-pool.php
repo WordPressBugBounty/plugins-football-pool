@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2025 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -30,12 +30,12 @@
  * License: GPLv3 or later
  * Text Domain: football-pool
  * Domain Path: /languages
- * Requires at least: 4.8
+ * Requires at least: 5.3
  * Requires PHP: 7.4
- * Version: 2.12.3
+ * Version: 2.13.5
  */
 
-const FOOTBALLPOOL_DB_VERSION = '2.12.3';
+const FOOTBALLPOOL_DB_VERSION = '2.13.5';
 
 if ( wp_doing_cron() ) {
 	// Let's not load Football Pool during cron events.
@@ -92,7 +92,21 @@ if ( ! wp_doing_cron() ) {
 	require_once 'widgets/widget-football-pool-next-prediction.php';
 }
 
-// Plugin initialisation and activation or update.
+// Bootstrapper
+function footballpool(): ?Football_Pool_Pool {
+	static $instance = null;
+
+	if ( $instance === null ) {
+		$instance = new Football_Pool_Pool( FOOTBALLPOOL_DEFAULT_SEASON );
+
+		// Backward compatibility bridge
+		$GLOBALS['pool'] = $instance;
+	}
+
+	return $instance;
+}
+
+// Plugin initialization and activation or update.
 // Activate the plugin
 register_activation_hook( __FILE__, [ 'Football_Pool', 'activate' ] );
 register_deactivation_hook( __FILE__, [ 'Football_Pool', 'deactivate' ] );
@@ -109,28 +123,27 @@ if ( ! wp_doing_ajax() ) {
 
 // Admin bar and content handling.
 if ( ! is_admin() && ! wp_doing_ajax() ) {
+	$priority = FOOTBALLPOOL_CONTENT_FILTER_PRIORITY;
 	add_filter( 'show_admin_bar', [ 'Football_Pool', 'show_admin_bar' ] );
-	add_filter( 'the_content', [ 'Football_Pool', 'the_content' ], FOOTBALLPOOL_CONTENT_FILTER_PRIORITY );
+	add_filter( 'the_content', [ 'Football_Pool', 'the_content' ], $priority );
 	if ( FOOTBALLPOOL_CHANGE_STATS_TITLE ) {
-		add_filter( 'the_title', [ 'Football_Pool_Statistics_Page', 'stats_page_title' ],
-			FOOTBALLPOOL_CONTENT_FILTER_PRIORITY );
+		add_filter( 'the_title', [ 'Football_Pool_Statistics_Page', 'stats_page_title' ], $priority );
 	}
 	add_action( 'wp_head', [ 'Football_Pool', 'change_html_head' ] );
-	add_filter( 'document_title_parts', [ 'Football_Pool', 'change_wp_title' ],
-		FOOTBALLPOOL_CONTENT_FILTER_PRIORITY );
+	add_filter( 'document_title_parts', [ 'Football_Pool', 'change_wp_title' ], $priority );
 }
 
 // User registration extension (precaution: also set for AJAX requests).
-add_action( 'user_register', [ 'Football_Pool', 'new_pool_user' ] );
-add_action( 'register_form', [ 'Football_Pool', 'registration_form_extra_fields' ] );
-add_action( 'register_post', [ 'Football_Pool', 'registration_form_post' ], null, 3 );
-add_filter( 'registration_errors', [ 'Football_Pool', 'registration_check_fields' ], null, 3 );
+$priority = FOOTBALLPOOL_REGISTRATION_FILTER_PRIORITY;
+add_action( 'user_register', [ 'Football_Pool', 'new_pool_user' ], $priority );
+add_action( 'register_form', [ 'Football_Pool', 'registration_form_extra_fields' ],$priority );
+add_action( 'register_post', [ 'Football_Pool', 'registration_form_post' ], $priority, 3 );
+add_filter( 'registration_errors', [ 'Football_Pool', 'registration_check_fields' ], $priority, 1 );
 // Redirect players of the pool after login or registration
+$priority = FOOTBALLPOOL_REDIRECT_FILTER_PRIORITY;
 if ( ! wp_doing_ajax() && ! wp_doing_cron() ) {
-	add_filter( 'login_redirect', [ 'Football_Pool', 'player_login_redirect' ],
-		FOOTBALLPOOL_REDIRECT_FILTER_PRIORITY, 3 );
-	add_filter( 'registration_redirect', [ 'Football_Pool', 'player_registration_redirect' ],
-		FOOTBALLPOOL_REDIRECT_FILTER_PRIORITY );
+	add_filter( 'login_redirect', [ 'Football_Pool', 'player_login_redirect' ], $priority, 3 );
+	add_filter( 'registration_redirect', [ 'Football_Pool', 'player_registration_redirect' ], $priority );
 }
 
 // Personal data exporter.
@@ -170,7 +183,7 @@ if ( is_admin() && ! wp_doing_ajax() ) {
 	require_once 'admin/class-football-pool-admin-predictions-audit-log.php';
 
 	add_action( 'admin_menu', [ 'Football_Pool_Admin', 'admin_menu_init' ] );
-	// add_action( 'admin_head', array( 'Football_Pool_Admin', 'adminhook_suffix' ) ); // debugging helper
+	// add_action( 'admin_head', [ 'Football_Pool_Admin', 'adminhook_suffix' ] ); // debugging helper
 	add_action( 'show_user_profile', [ 'Football_Pool_Admin_Users', 'add_extra_profile_fields' ] );
 	add_action( 'edit_user_profile', [ 'Football_Pool_Admin_Users', 'add_extra_profile_fields' ] );
 	add_action( 'personal_options_update', [ 'Football_Pool_Admin_Users', 'update_user_options' ] );

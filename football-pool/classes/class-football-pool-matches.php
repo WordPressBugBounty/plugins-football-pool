@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -24,7 +24,7 @@ class Football_Pool_Matches {
 	public array $joker_value;
 	public int $match_table_layout;
 	public array $matches;
-	public array $all_matches;
+	public ?array $all_matches = null;
 	public bool $always_show_predictions = false;
 	public bool $has_matches = false;
 
@@ -71,10 +71,49 @@ class Football_Pool_Matches {
 		$this->has_matches = ( count( $this->matches ) > 0 );
 	}
 
-	private function enable_edits() {
-		$this->matches_are_editable = true;
+	private function matches_query( $extra = '', $all_matches = false ): string {
+		$prefix = FOOTBALLPOOL_DB_PREFIX;
+		$sorting = $this->get_match_sorting_method();
+
+		$only_visible = ( $all_matches === false ) ? 'AND t.visibility = 1' : '';
+
+		return "SELECT 
+					m.id, 
+					m.play_date,
+					m.home_team_id, m.away_team_id, 
+					m.home_score, m.away_score, 
+					s.name AS stadium_name, s.id AS stadium_id,
+					t.name AS matchtype, t.id AS type_id, t.id AS match_type_id, t.visibility AS match_is_visible
+				FROM {$prefix}matches m
+				JOIN {$prefix}stadiums s ON ( m.stadium_id = s.id )
+				JOIN {$prefix}matchtypes t ON ( m.matchtype_id = t.id {$only_visible} )
+				{$extra}
+				ORDER BY {$sorting}";
 	}
 
+	public function get_match_sorting_method() {
+		$order = Football_Pool_Utils::get_fp_option( 'match_sort_method', FOOTBALLPOOL_MATCH_SORT, 'int' );
+		switch ( $order ) {
+			case 3:
+				$order = 'matchtype ASC, m.play_date DESC, m.id DESC';
+				break;
+			case 2:
+				$order = 'matchtype DESC, m.play_date ASC, m.id ASC';
+				break;
+			case 1:
+				$order = 'm.play_date DESC, m.id DESC';
+				break;
+			case 0:
+			default:
+				$order = 'm.play_date ASC, m.id ASC';
+		}
+
+		return apply_filters( 'footballpool_match_sorting_method', $order );
+	}
+
+	/**
+	 * @throws Exception
+	 */
 	private function all_matches_info() {
 		$match_info = wp_cache_get( FOOTBALLPOOL_CACHE_ALL_MATCHES, FOOTBALLPOOL_WPCACHE_NON_PERSISTENT );
 
@@ -89,10 +128,10 @@ class Football_Pool_Matches {
 
 			foreach ( $rows as $row ) {
 				$i = (int) $row['id'];
-				$matchdate = new DateTime( $row['play_date'] );
+				$matchdate = new DateTime( $row['play_date'], new DateTimeZone( 'UTC' ) );
 				$ts = $matchdate->format( 'U' );
 
-				$match_info[ $i ] = array();
+				$match_info[ $i ] = [];
 				$match_info[ $i ]['id'] = (int) $row['id'];
 				$match_info[ $i ]['match_datetime'] = $matchdate->format( 'd M Y H:i' );
 				$match_info[ $i ]['match_timestamp'] = $ts;
@@ -153,47 +192,11 @@ class Football_Pool_Matches {
 		return $match_info;
 	}
 
-	private function matches_query( $extra = '', $all_matches = false ): string {
-		$prefix = FOOTBALLPOOL_DB_PREFIX;
-		$sorting = $this->get_match_sorting_method();
-
-		$only_visible = ( $all_matches === false ) ? 'AND t.visibility = 1' : '';
-
-		return "SELECT 
-					m.id, 
-					m.play_date,
-					m.home_team_id, m.away_team_id, 
-					m.home_score, m.away_score, 
-					s.name AS stadium_name, s.id AS stadium_id,
-					t.name AS matchtype, t.id AS type_id, t.id AS match_type_id, t.visibility AS match_is_visible
-				FROM {$prefix}matches m
-				JOIN {$prefix}stadiums s ON ( m.stadium_id = s.id )
-				JOIN {$prefix}matchtypes t ON ( m.matchtype_id = t.id {$only_visible} )
-				{$extra}
-				ORDER BY {$sorting}";
+	private function enable_edits() {
+		$this->matches_are_editable = true;
 	}
 
-	public function get_match_sorting_method() {
-		$order = Football_Pool_Utils::get_fp_option( 'match_sort_method', FOOTBALLPOOL_MATCH_SORT, 'int' );
-		switch ( $order ) {
-			case 3:
-				$order = 'matchtype ASC, m.play_date DESC, m.id DESC';
-				break;
-			case 2:
-				$order = 'matchtype DESC, m.play_date ASC, m.id ASC';
-				break;
-			case 1:
-				$order = 'm.play_date DESC, m.id DESC';
-				break;
-			case 0:
-			default:
-				$order = 'm.play_date ASC, m.id ASC';
-		}
-
-		return apply_filters( 'footballpool_match_sorting_method', $order );
-	}
-
-	public function match_is_editable( $ts ) {
+	public function match_is_editable( $ts ): bool {
 		if ( $this->force_lock_time ) {
 			$editable = ( current_time( 'timestamp' ) < $this->lock );
 		} else {
@@ -202,20 +205,6 @@ class Football_Pool_Matches {
 		}
 
 		return $editable;
-	}
-
-	private function match_info() {
-		$match_info = wp_cache_get( FOOTBALLPOOL_CACHE_MATCHES, FOOTBALLPOOL_WPCACHE_NON_PERSISTENT );
-
-		if ( $match_info === false ) {
-			$match_info = array_filter( $this->all_matches, function ( $v, $k ) {
-				return $v['match_is_visible'] === 1;
-			}, ARRAY_FILTER_USE_BOTH );
-
-			wp_cache_set( FOOTBALLPOOL_CACHE_MATCHES, $match_info, FOOTBALLPOOL_WPCACHE_NON_PERSISTENT );
-		}
-
-		return $match_info;
 	}
 
 	public static function get_match_types() {
@@ -293,11 +282,25 @@ class Football_Pool_Matches {
 		return $wpdb->get_results( $sql, ARRAY_A );
 	}
 
+	private function match_info() {
+		$match_info = wp_cache_get( FOOTBALLPOOL_CACHE_MATCHES, FOOTBALLPOOL_WPCACHE_NON_PERSISTENT );
+
+		if ( $match_info === false ) {
+			$match_info = array_filter( $this->all_matches, function ( $v, $k ) {
+				return $v['match_is_visible'] === 1;
+			}, ARRAY_FILTER_USE_BOTH );
+
+			wp_cache_set( FOOTBALLPOOL_CACHE_MATCHES, $match_info, FOOTBALLPOOL_WPCACHE_NON_PERSISTENT );
+		}
+
+		return $match_info;
+	}
+
 	public function get_match_info_for_user( $user_id, $match_ids = [], $all_matches = false ) {
 		$match_info = $this->get_match_info_array_for_user( $user_id );
 
 		if ( is_array( $match_ids ) && count( $match_ids ) > 0 ) {
-			// filter out matches that were not passed to the function
+			// Filter out matches that were not passed to the function
 			foreach ( $match_info as $id => $val ) {
 				if ( ! in_array( $id, $match_ids ) ) {
 					unset( $match_info[ $id ] );
@@ -306,7 +309,7 @@ class Football_Pool_Matches {
 		}
 
 		if ( $all_matches === false ) {
-			// filter out all matches that are in an invisible match type
+			// Filter out all matches that are in an invisible match type
 			$match_info = array_filter( $match_info, function ( $v, $k ) {
 				return $v['match_is_visible'] === 1;
 			}, ARRAY_FILTER_USE_BOTH );
@@ -315,12 +318,14 @@ class Football_Pool_Matches {
 		return apply_filters( 'footballpool_matches_for_user', $match_info, $user_id );
 	}
 
-	private function get_match_info_array_for_user( $user_id ) {
-		global $wpdb, $pool;
+	public function get_match_info_for_user_unfiltered( $user_id ): array {
+		return $this->get_match_info_array_for_user( $user_id );
+	}
 
-		if ( ! ( $pool instanceof Football_Pool_Pool ) ) {
-			$pool = new Football_Pool_Pool();
-		}
+	private function get_match_info_array_for_user( $user_id ): array {
+		global $wpdb;
+
+		$pool = footballpool();
 
 		$cache_key = "match_info_for_user_{$user_id}";
 		$rows = wp_cache_get( $cache_key, FOOTBALLPOOL_WPCACHE_NON_PERSISTENT );
@@ -345,10 +350,10 @@ class Football_Pool_Matches {
 			wp_cache_set( $cache_key, $rows, FOOTBALLPOOL_WPCACHE_NON_PERSISTENT );
 		}
 
-		$match_info = array();
+		$match_info = [];
 
 		// Loop through the user match info and count all jokers: total and per match type.
-		$match_types_in_predictions = array();
+		$match_types_in_predictions = [];
 		$locked_jokers = array(
 			// 0:       total of all jokers
 			// 1..x:    total for match type id
@@ -357,7 +362,16 @@ class Football_Pool_Matches {
 		foreach ( $rows as $row ) {
 			$i = (int) $row['id'];
 			// Get detailed match info from cache.
-			$match_info[ $i ] = $this->get_match_info( $i );
+			$info = $this->get_match_info( $i );
+
+			if ( empty( $info ) ) {
+				// There is something wrong with this record. Probably corrupt data in the database.
+				// So, we log it and skip to the next row.
+				error_log( "Football Pool: empty match info for match id {$i}. Check your database for inconsistencies." );
+				continue;
+			}
+
+			$match_info[ $i ] = $info;
 
 			// Set to true if user has a prediction for this match stored in the database
 			// (if row exists but has null values, then we still consider it a true value).
@@ -407,14 +421,24 @@ class Football_Pool_Matches {
 		return apply_filters( 'footballpool_match_array_for_user', $match_info, $user_id );
 	}
 
-	public function get_match_info( $match ) {
-		if ( is_int( $match ) && array_key_exists( $match, $this->all_matches ) ) {
-			return $this->all_matches[ $match ];
-		} else {
-			return array();
-		}
-	}
+//	public function get_match_info( $match ) {
+//		if ( is_int( $match ) && array_key_exists( $match, $this->all_matches ) ) {
+//			return $this->all_matches[ $match ];
+//		} else {
+//			return [];
+//		}
+//	}
 
+	/**
+	 * @throws Exception
+	 */
+	public function get_match_info( $match ) {
+		if ( $this->all_matches === null ) {
+			$this->all_matches = $this->all_matches_info();
+		}
+
+		return $this->all_matches[ $match ] ?? [];
+	}
 	private function block_joker( $el ) {
 		$this->joker_blocked[ $el ] = true;
 	}
@@ -426,11 +450,12 @@ class Football_Pool_Matches {
 
 		global $wpdb;
 		$prefix = FOOTBALLPOOL_DB_PREFIX;
-		$sql = $wpdb->prepare( "SELECT m.id FROM {$prefix}matches m 
-								LEFT OUTER JOIN {$prefix}predictions p 
-									ON ( p.match_id = m.id AND p.user_id = %d )
-								WHERE p.user_id IS NULL OR p.home_score IS NULL OR p.away_score IS NULL
-								ORDER BY m.play_date ASC, id ASC LIMIT 1",
+		$sql = $wpdb->prepare(
+			"SELECT m.id FROM {$prefix}matches m 
+			LEFT OUTER JOIN {$prefix}predictions p 
+				ON ( p.match_id = m.id AND p.user_id = %d )
+			WHERE p.user_id IS NULL OR p.home_score IS NULL OR p.away_score IS NULL
+			ORDER BY m.play_date ASC, id ASC LIMIT 1",
 			$user_id
 		);
 		$row = $wpdb->get_row( $sql, ARRAY_A );
@@ -441,10 +466,11 @@ class Football_Pool_Matches {
 	public function get_match_info_for_teams( $a, $b ) {
 		global $wpdb;
 		$prefix = FOOTBALLPOOL_DB_PREFIX;
-		$sql = $wpdb->prepare( "SELECT home_team_id, away_team_id, home_score, away_score 
-								FROM {$prefix}matches 
-								WHERE ( home_team_id = %d AND away_team_id = %d ) 
-									OR ( home_team_id = %d AND away_team_id = %d )",
+		$sql = $wpdb->prepare(
+			"SELECT home_team_id, away_team_id, home_score, away_score 
+			FROM {$prefix}matches 
+			WHERE ( home_team_id = %d AND away_team_id = %d ) 
+				OR ( home_team_id = %d AND away_team_id = %d )",
 			$a, $b,
 			$b, $a
 		);
@@ -461,6 +487,9 @@ class Football_Pool_Matches {
 		}
 	}
 
+	/**
+	 * @throws Exception
+	 */
 	public function print_matches( $matches, $page = '' ): string {
 		$teams = new Football_Pool_Teams;
 		$teamspage = Football_Pool::get_page_link( 'teams' );
@@ -538,7 +567,7 @@ class Football_Pool_Matches {
 		$output = Football_Pool_Utils::placeholder_replace( $template_start, $template_params );
 		$matches = apply_filters( 'footballpool_print_matches_matches_filter', $matches, $page );
 		foreach ( $matches as $row ) {
-			$matchdate = new DateTime( $row['play_date'] );
+			$matchdate = new DateTime( $row['play_date'], new DateTimeZone( 'UTC' ) );
 			$localdate = new DateTime( $this->format_match_time( $matchdate, 'Y-m-d H:i' ) );
 			$localdate_formatted = date_i18n( FOOTBALLPOOL_MATCH_DATE_FORMAT, $localdate->format( 'U' ) );
 			$match_day = date_i18n( FOOTBALLPOOL_MATCH_DAY_FORMAT, $localdate->format( 'U' ) );
@@ -694,7 +723,7 @@ class Football_Pool_Matches {
 		$is_user_page = false,
 		$show_actual = false
 	) {
-		global $pool;
+		$pool = footballpool();
 		if ( $is_user_page ) {
 			$this->disable_edits();
 		}
@@ -820,7 +849,7 @@ class Football_Pool_Matches {
 				$joker[] = (int) $row['id'];
 			}
 
-			$matchdate = new DateTime( $row['play_date'] );
+			$matchdate = new DateTime( $row['play_date'], new DateTimeZone( 'UTC' ) );
 			$localdate = new DateTime( $this->format_match_time( $matchdate, 'Y-m-d H:i' ) );
 			$localdate_formatted = date_i18n( FOOTBALLPOOL_MATCH_DATE_FORMAT, $localdate->format( 'U' ) );
 			$match_day = date_i18n( FOOTBALLPOOL_MATCH_DAY_FORMAT, $localdate->format( 'U' ) );
@@ -963,9 +992,8 @@ class Football_Pool_Matches {
 	}
 
 	public function show_score( $home, $away, $user_home, $user_away, $joker, $ts, $match_id, $user_id = null ) {
-		global $pool;
 		if ( ! $this->match_is_editable( $ts ) ) {
-			$score = $pool->calc_score( $home, $away, $user_home, $user_away, $joker, $match_id, $user_id );
+			$score = footballpool()->calc_score( $home, $away, $user_home, $user_away, $joker, $match_id, $user_id );
 
 			return $score['score'];
 		} else {
@@ -1066,10 +1094,6 @@ class Football_Pool_Matches {
 		}
 
 		return $jokers;
-	}
-
-	public function get_match_info_for_user_unfiltered( $user_id ) {
-		return $this->get_match_info_array_for_user( $user_id );
 	}
 
 	public function get_match_type_by_id( $id ) {

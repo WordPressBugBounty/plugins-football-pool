@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2025 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -93,7 +93,7 @@ class Football_Pool_CLI_Import_Match_Results {
 		if ( $file !== false && ( $fp = @fopen( $file, 'r' ) ) !== false ) {
 			$lines = [];
 			$line = 0;
-			while ( ( $data = fgetcsv( $fp, 0, FOOTBALLPOOL_CSV_DELIMITER ) ) !== false ) {
+			while ( ( $data = fgetcsv( $fp, 0, FOOTBALLPOOL_CSV_DELIMITER, "\"", "\\" ) ) !== false ) {
 				$line++;
 				// check the column count in the fetched line
 				if ( count( $data ) !== 3 ) {
@@ -107,8 +107,9 @@ class Football_Pool_CLI_Import_Match_Results {
 
 			// process the lines from the csv
 			if ( count( $lines ) > 0 ) {
-				global $wpdb, $pool;
+				global $wpdb;
 				$prefix = FOOTBALLPOOL_DB_PREFIX;
+				$pool = footballpool();
 
 				if ( ! $dry_run ) $progress = \WP_CLI\Utils\make_progress_bar( 'Importing', count( $lines ) );
 

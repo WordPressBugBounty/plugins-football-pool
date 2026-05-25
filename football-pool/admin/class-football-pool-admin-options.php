@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -44,7 +44,7 @@ class Football_Pool_Admin_Options extends Football_Pool_Admin {
 	}
 	
 	public static function admin() {
-		global $pool;
+		$pool = footballpool();
 
 		$action = Football_Pool_Utils::post_string( 'action' );
 		$date = date_i18n( 'Y-m-d H:i' );
@@ -850,6 +850,22 @@ class Football_Pool_Admin_Options extends Football_Pool_Admin {
 						'value_type' => 'integer',
 						'desc'       => __( 'Send an email to the admin email address when a new Shoutbox message was added.', 'football-pool' )
 					),
+				'shoutbox_hide_form' =>
+					array(
+						'id'         => 'shoutbox_hide_form',
+						'label'      => __( 'Shoutbox hide form', 'football-pool' ),
+						'type'       => 'checkbox',
+						'value_type' => 'integer',
+						'desc'       => __( 'Always hide the form in the widget.', 'football-pool' )
+					),
+				'local_time_match_edits' =>
+					array(
+						'id'         => 'local_time_match_edits',
+						'label'      => __( 'Use local time', 'football-pool' ),
+						'type'       => 'checkbox',
+						'value_type' => 'integer',
+						'desc'       => __( 'Enter local times (based on current time zone setting in WP) instead of UTC when editing match dates.', 'football-pool' )
+					),
 
 		);
 		
@@ -1043,22 +1059,31 @@ class Football_Pool_Admin_Options extends Football_Pool_Admin {
 		);
 		submit_button( null, 'primary', null, true );
 
+		self::admin_sectiontitle( __( 'Admin Options', 'football-pool' ) );
+		self::options_form(
+			array(
+				$options['export_format'],
+				$options['local_time_match_edits'],
+				$options['hide_admin_bar'],
+				$options['add_tinymce_button'],
+				$options['erase_personal_data'],
+			)
+		);
+		submit_button( null, 'primary', null, true );
+
 		self::admin_sectiontitle( __( 'Other Options', 'football-pool' ) );
 		self::options_form(
 			array(
 				$options['keep_data_on_uninstall'],
-				$options['erase_personal_data'],
 				$options['use_charts'],
 				$options['auto_select_current_user_for_stats'],
 				$options['redirect_url_after_login'],
 				$options['redirect_url_after_registration'],
-				$options['export_format'],
 				$options['shoutbox_max_chars'],
 				$options['shoutbox_notifications'],
+				$options['shoutbox_hide_form'],
 				$options['dashboard_image'],
 				$options['use_favicon'],
-				$options['hide_admin_bar'],
-				$options['add_tinymce_button'],
 			)
 		);
 		submit_button( null, 'primary', null, true );

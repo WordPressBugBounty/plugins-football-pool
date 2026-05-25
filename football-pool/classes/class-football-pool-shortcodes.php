@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2025 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -55,17 +55,22 @@ add_shortcode( 'fp-next-matches', ['Football_Pool_Shortcodes', 'shortcode_next_m
 add_shortcode( 'fp-last-matches', ['Football_Pool_Shortcodes', 'shortcode_last_matches'] );
 
 class Football_Pool_Shortcodes {
-	private static function league_helper( $league, $user_id, $default_league = FOOTBALLPOOL_LEAGUE_ALL ): int {
+	/**
+	 * @param  string  $league
+	 * @param  int  $user_id
+	 *
+	 * @return int
+	 */
+	private static function league_helper( string $league, int $user_id ): int {
 		if ( strtolower( $league ) === 'user' && $user_id > 0 ) {
-			global $pool;
-			$league = $pool->get_league_for_user( $user_id );
-			if ( $league === 0 ) $league = $default_league;
+			$league = footballpool()->get_league_for_user( $user_id );
+			if ( $league === 0 ) $league = FOOTBALLPOOL_LEAGUE_ALL;
 		}
 		
 		return (int) $league;
 	}
-	
-	private static function date_helper( $date ) {
+
+	private static function date_helper( string $date ) {
 		if ( $date === 'postdate' ) {
 			$the_date = get_the_date( 'Y-m-d H:i' );
 		} elseif ( $date !== 'now' && ( $the_date = date_create( $date ) ) !== false ) {
@@ -77,14 +82,33 @@ class Football_Pool_Shortcodes {
 		return $the_date;
 	}
 	
-	private static function format_helper( $input, $format ) {
+	private static function format_helper( $str, $format ) {
 		if ( isset( $format ) && is_string( $format ) ) {
-			$input = sprintf( $format, $input );
+			$str = sprintf(
+				Football_Pool_Utils::xssafe( $format ),
+				$str
+			);
 		}
 		
-		return $input;
+		return $str;
 	}
-	
+
+
+	/**
+	 * Recursively clean all shortcode attributes.
+	 *
+	 * @param array $atts
+	 * @return array
+	 */
+	public static function clean_atts( array $atts ): array {
+		foreach ( $atts as $k => $v ) {
+			if ( is_string( $v ) ) {
+				$atts[$k] = Football_Pool_Utils::normalize_input( $v );
+			}
+		}
+		return $atts;
+	}
+
 	// TODO: finish fp-last-predictions shortcode
 	//[fp-last-predictions] 
 	//  Displays the last X predictions for matches for a set of users.
@@ -95,7 +119,11 @@ class Football_Pool_Shortcodes {
 	//    ranking : the ranking to get the top users from, defaults to the default ranking
 	//    num     : number of matches to show, defaults to 5
 	public static function shortcode_last_predictions( $atts ) {
-		global $wpdb, $pool;
+		global $wpdb;
+		$prefix = FOOTBALLPOOL_DB_PREFIX;
+		$pool = footballpool();
+
+		$atts = self::clean_atts( $atts );
 		$atts = shortcode_atts( array(
 			'users' => '',
 			'top' => '',
@@ -124,7 +152,6 @@ class Football_Pool_Shortcodes {
 		
 		if ( count( $user_set ) > 0 ) {
 			$user_set = implode( ',', $user_set );
-			$prefix = FOOTBALLPOOL_DB_PREFIX;
 			$sql = "SELECT p.user_id, p.match_id, p.home_score, p.away_score
 					FROM {$prefix}predictions p
 					INNER JOIN {$prefix}matches m ON ( m.id = p.match_id )
@@ -170,10 +197,12 @@ class Football_Pool_Shortcodes {
 	//
 	//  format	: a datetime value format like this 'Y-m-d H:i'
 	public static function shortcode_last_calc_date( $atts ) {
-		$format = '';
-		extract( shortcode_atts( array(
+		$atts = self::clean_atts( $atts );
+		$atts = shortcode_atts( array(
 			'format' => 'd-m-Y \a\t H:i',
-		), $atts ) );
+		), $atts );
+
+		$format = Football_Pool_Utils::xssafe( $atts['format'] );
 
 		$calc_date = get_option( FOOTBALLPOOL_LAST_CALC_DATE, '' );
 
@@ -206,30 +235,32 @@ class Football_Pool_Shortcodes {
 	//    amount  : the stake
 	//    format  : optional format for the output (uses sprintf notation: http://php.net/sprintf)
 	public static function shortcode_money_in_the_pot( $atts ) {
-		$league = $amount = $format = '';
-		extract( shortcode_atts( array(
-					'league' => FOOTBALLPOOL_LEAGUE_ALL,
-					'amount' => 0,
-					'format' => null,
-				), $atts ) );
+		$atts = self::clean_atts( $atts );
+		$atts = shortcode_atts( array(
+			'league' => FOOTBALLPOOL_LEAGUE_ALL,
+			'amount' => 0,
+			'format' => null,
+		), $atts );
 
-		global $pool;
 		$numplayers = 0;
 		
-		$league = self::league_helper( $league, get_current_user_id() );
+		$league = self::league_helper( $atts['league'], get_current_user_id() );
 		$league_ids = Football_Pool_Utils::extract_ids( $league );
 
 		if ( count( $league_ids ) > 0 ) {
 			foreach ( $league_ids as $league_id ) {
-				$users = $pool->get_users( $league_id );
+				$users = footballpool()->get_users( $league_id );
 				$numplayers += count( $users );
 			}
 		}
 		
-		$output = $numplayers * $amount;
+		$output = $numplayers * $atts['amount'];
 		
-		return apply_filters( 'footballpool_shortcode_html_fp-money-in-the-pot'
-			, self::format_helper( $output, $format ), $atts );
+		return apply_filters(
+			'footballpool_shortcode_html_fp-money-in-the-pot',
+			self::format_helper( $output, $atts['format'] ),
+			$atts
+		);
 	}
 	
 	//[fp-match-scores]
@@ -250,8 +281,8 @@ class Football_Pool_Shortcodes {
 	//    hide_zeroes      : if set to 'yes' a score of 0 points will not be shown
     //    display          : defaults to 'points' (scored per match), can also be 'predictions' or 'both'
 	public static function shortcode_scores( $atts ) {
-		$users = $league = $match = $matchtype = $use_querystring = $show_total = $display = $hide_zeroes = '';
-		extract( shortcode_atts( array(
+		$atts = self::clean_atts( $atts );
+		$atts = shortcode_atts( array(
 			'users' => '',
 			'league' => FOOTBALLPOOL_LEAGUE_ALL,
 			'match' => '',
@@ -260,19 +291,25 @@ class Football_Pool_Shortcodes {
 			'show_total' => 'no',
 			'hide_zeroes' => 'no',
             'display' => 'points',
-		), $atts ) );
+		), $atts );
 
-		$show_total = ( $show_total === 'yes' );
-		$hide_zeroes = ( $hide_zeroes === 'yes' );
+		$show_total = ( $atts['show_total'] === 'yes' );
+		$hide_zeroes = ( $atts['hide_zeroes'] === 'yes' );
+		$display = $atts['display'];
 
-		if ( $use_querystring === 'yes' ) {
+		if ( $atts['use_querystring'] === 'yes' ) {
 			$users = Football_Pool_Utils::get_string( 'users', '' );
 			$league = Football_Pool_Utils::get_string( 'league', '' );
 			$match = Football_Pool_Utils::get_string( 'match', '' );
 			$matchtype = Football_Pool_Utils::get_string( 'matchtype', '' );
+		} else {
+			$users = $atts['users'];
+			$league = $atts['league'];
+			$match = $atts['match'];
+			$matchtype = $atts['matchtype'];
 		}
 
-		global $pool;
+		$pool = footballpool();
 		$output = '';
 		
 		// get the users
@@ -283,19 +320,18 @@ class Football_Pool_Shortcodes {
 			if ( is_numeric( $league ) ) {
 				$users = $pool->get_users( $league );
 				foreach ( $users as $user ) {
-					$the_users[] = $user['user_id'];
+					$the_users[] = (int) $user['user_id'];
 				}
 			}
 		}
 		
 		// get the matches
-		$the_matches = [];
-		
 		$match_ids = Football_Pool_Utils::extract_ids( $match );
 		$matchtype_ids = Football_Pool_Utils::extract_ids( $matchtype );
 		// add all matches in the match types collection to the match_ids
 		$match_ids = array_merge( $match_ids, $pool->matches->get_matches_for_match_type( $matchtype_ids ) );
-		
+
+		$the_matches = [];
 		foreach ( $pool->matches->matches as $match ) {
 			if ( in_array( $match['id'], $match_ids ) ) $the_matches[] = $match;
 		}
@@ -307,14 +343,16 @@ class Football_Pool_Shortcodes {
 			$output .= '<th class="player-name"></th>';
 			foreach ( $the_matches as $match ) {
 				if ( $pool->matches->always_show_predictions || $match['match_is_editable'] === false ) {
-					$output .= sprintf( '<th class="match"><div><span>%s - %s</span></div>'
-						, Football_Pool_Utils::xssafe( $match['home_team'] )
-						, Football_Pool_Utils::xssafe( $match['away_team'] )
+					$output .= sprintf(
+						'<th class="match"><div><span>%s - %s</span></div>',
+						Football_Pool_Utils::xssafe( $match['home_team'] ),
+						Football_Pool_Utils::xssafe( $match['away_team'] )
 					);
 					if ( is_numeric( $match['home_score'] ) && is_numeric( $match['away_score'] ) ) {
-						$output .= sprintf( '<div class="match-result">%s - %s</div>'
-							, $match['home_score']
-							, $match['away_score']
+						$output .= sprintf(
+							'<div class="match-result">%s - %s</div>',
+							$match['home_score'],
+							$match['away_score']
 						);
 					}
 					$output .= '</th>';
@@ -335,9 +373,10 @@ class Football_Pool_Shortcodes {
 				// out users that do not have predictions.
 				if ( $match_info !== null ) {
 					$output .= '<tr>';
-					$output .= sprintf( '<td class="player-name user-id-%d">%s</td>'
-						, $user_id
-						, $pool->user_name( $user_id )
+					$output .= sprintf(
+						'<td class="player-name user-id-%d">%s</td>',
+						$user_id,
+						$pool->user_name( $user_id )
 					);
 					foreach( $the_matches as $match ) {
 						if ( $pool->matches->always_show_predictions || $match['match_is_editable'] === false ) {
@@ -350,20 +389,23 @@ class Football_Pool_Shortcodes {
 								$match['id'],
 								$user_id
 							);
+
 							$css_class = '';
 							if ( $score['full'] > 0 ) $css_class .= ' full';
 							if ( $score['toto'] > 0 ) $css_class .= ' toto';
 							if ( $score['goal_bonus'] > 0 ) $css_class .= ' goal-bonus';
 							if ( $score['goal_diff_bonus'] > 0 ) $css_class .= ' goal-diff-bonus';
 							if ( ! is_numeric( $match_info[$match['id']]['home_score'] ) ||
-								! is_numeric( $match_info[$match['id']]['away_score'] ) )
+								! is_numeric( $match_info[$match['id']]['away_score'] ) ) {
 								$css_class .= ' not-a-valid-prediction';
+							}
 
 							$output .= sprintf( '<td class="score %s%s">', esc_attr( $display ), $css_class );
 							if ( $display === 'predictions' || $display === 'both' ) {
-								$output .= sprintf( '<span class="user-prediction">%s-%s</span>'
-									, $match_info[$match['id']]['home_score']
-									, $match_info[$match['id']]['away_score']
+								$output .= sprintf(
+									'<span class="user-prediction">%s-%s</span>',
+									$match_info[$match['id']]['home_score'],
+									$match_info[$match['id']]['away_score']
 								);
 							}
 							if ( $display === 'points' || $display === 'both' ) {
@@ -406,25 +448,32 @@ class Football_Pool_Shortcodes {
 	//    use_querystring  : if set to 'yes' all parameters will be retrieved from the querystring values
 	//    show_total       : if set to 'yes' the total score for a row will be shown
 	//    hide_zeroes      : if set to 'yes' a score of 0 points will not be shown
+	/**
+	 * @throws Exception
+	 */
 	public static function shortcode_question_scores( $atts ) {
-		global $pool;
-		$users = $league = $question = $use_querystring = $show_total = $hide_zeroes = '';
-		extract( shortcode_atts( array(
+		$pool = footballpool();
+		$atts = self::clean_atts( $atts );
+		$atts = shortcode_atts( array(
 			'users' => '',
 			'league' => FOOTBALLPOOL_LEAGUE_ALL,
 			'question' => '',
 			'use_querystring' => 'no',
 			'show_total' => 'no',
 			'hide_zeroes' => 'no',
-		), $atts ) );
+		), $atts );
 
-		$show_total = ( $show_total === 'yes' );
-		$hide_zeroes = ( $hide_zeroes === 'yes' );
+		$show_total = ( $atts['show_total'] === 'yes' );
+		$hide_zeroes = ( $atts['hide_zeroes'] === 'yes' );
 
-		if ( $use_querystring === 'yes' ) {
+		if ( $atts['use_querystring'] === 'yes' ) {
 			$users = Football_Pool_Utils::get_string( 'users', '' );
 			$league = Football_Pool_Utils::get_string( 'league', '' );
 			$question = Football_Pool_Utils::get_string( 'question', '' );
+		} else {
+			$users = $atts['users'];
+			$league = $atts['league'];
+			$question = $atts['question'];
 		}
 
 		$output = '';
@@ -437,7 +486,7 @@ class Football_Pool_Shortcodes {
 			if ( is_numeric( $league ) ) {
 				$users = $pool->get_users( $league );
 				foreach ( $users as $user ) {
-					$the_users[] = $user['user_id'];
+					$the_users[] = (int) $user['user_id'];
 				}
 			}
 		}
@@ -466,10 +515,10 @@ class Football_Pool_Shortcodes {
 					'<th class="question">
 						<span class="question-id" title="%1$s">%2$d</span>
 						<span class="question-nr" title="%1$s">%3$d</span>
-					</th>'
-					, esc_attr( $all_questions[ $question_id ]['question'] )
-					, $question_id
-					, $nr++
+					</th>',
+					esc_attr( $all_questions[ $question_id ]['question'] ),
+					$question_id,
+					$nr++
 				);
 			}
 			if ( $show_total === true ) {
@@ -560,7 +609,8 @@ class Football_Pool_Shortcodes {
 	//              with the num parameter) (optional)
 	public static function shortcode_user_list( $atts ): string
 	{
-		global $pool;
+		$pool = footballpool();
+		$atts = self::clean_atts( $atts );
 		$atts = shortcode_atts( array(
 			'league' => 0,
 			'num' => 0,
@@ -574,7 +624,7 @@ class Football_Pool_Shortcodes {
 
 		$output = '';
 
-		if ( is_numeric( $league ) && $league >= 0 ) {
+		if ( $league >= 0 ) {
 			$template_start = sprintf( '<ol class="fp-user-list league-%s">', $league );
 			$template_start = apply_filters( 'footballpool_fp-user-list_template_start',
 				$template_start, $league, $user_id
@@ -679,7 +729,8 @@ class Football_Pool_Shortcodes {
 	//              average points or weighted average
 	//    format  : optional format for the output (uses sprintf notation: http://php.net/sprintf)
 	public static function shortcode_league_info( $atts ) {
-		global $pool;
+		$pool = footballpool();
+		$atts = self::clean_atts( $atts );
 		$atts = shortcode_atts( array(
 					'league' => FOOTBALLPOOL_LEAGUE_ALL,
 					'info' => 'name',
@@ -694,16 +745,15 @@ class Football_Pool_Shortcodes {
 		$ranking = $atts['ranking'];
 		$format = $atts['format'];
 		
-		if ( is_numeric( $league ) 
-				&& in_array( $info, ['name', 'points', 'avgpoints', 'wavgpoints', 'numplayers', 'playernames'] ) ) {
+		if ( in_array( $info, ['name', 'points', 'avgpoints', 'wavgpoints', 'numplayers', 'playernames'] ) ) {
 			if ( $pool->has_leagues && array_key_exists( $league, $pool->leagues ) ) {
 				if ( $info === 'name' ) {
 					$output = Football_Pool_Utils::xssafe( $pool->leagues[$league]['league_name'] );
 				} else {
 					$rows = $pool->get_pool_ranking( $league, $ranking );
 					if ( count( $rows ) === 0 ) {
-						// no data in the pool ranking yet, or at least nothing is returned
-						// so try to get a list of users
+						// No data in the pool ranking yet, or at least nothing is returned.
+						// So, try to get a list of users.
 						$users = $pool->get_users( $league );
 						$rows = [];
 						$i = 0;
@@ -746,12 +796,14 @@ class Football_Pool_Shortcodes {
 						foreach ( $rows as $row ) {
 							$output .= sprintf( '<li id="fp-player-list-%d">%s</li>'
 								, $row['user_id']
-								, Football_Pool_Utils::xssafe( $pool->user_name( $row['user_id'] ) )
+								, Football_Pool_Utils::xssafe( $pool->user_name( (int) $row['user_id'] ) )
 							);
 						}
 						$output .= '</ul>';
 					}
 				}
+			} else {
+				$output = '<!-- unknown league in shortcode [fp-league-info] -->';
 			}
 		}
 		
@@ -770,27 +822,30 @@ class Football_Pool_Shortcodes {
 	//    match     : collection of match ids 
 	//    matchtype : collection of match type ids
 	//    group     : a group ID
+	/**
+	 * @throws Exception
+	 */
 	public static function shortcode_matches( $atts ) {
-		global $pool;
-		$match = $matchtype = $group = '';
-		extract( shortcode_atts( array(
-					'match' => '',
-					'matchtype' => '',
-					'group' => '',
-				), $atts ) );
+		$pool = footballpool();
+		$atts = self::clean_atts( $atts );
+		$atts = shortcode_atts( array(
+			'match' => '',
+			'matchtype' => '',
+			'group' => '',
+		), $atts );
 		
 		$output = '';
 		
 		$matches = $pool->matches;
 		$the_matches = [];
 		
-		if ( is_numeric( $group ) ) {
+		if ( is_numeric( $atts['group'] ) ) {
 			$groups = new Football_Pool_Groups;
-			$the_matches = $groups->get_plays( (int) $group );
+			$the_matches = $groups->get_plays( (int) $atts['group'] );
 		} else {
 			// extract all ids from the arguments
-			$match_ids = Football_Pool_Utils::extract_ids( $match );
-			$matchtype_ids = Football_Pool_Utils::extract_ids( $matchtype );
+			$match_ids = Football_Pool_Utils::extract_ids( $atts['match'] );
+			$matchtype_ids = Football_Pool_Utils::extract_ids( $atts['matchtype'] );
 			// add all matches in the match types collection to the match_ids
 			$match_ids = array_merge( $match_ids, $matches->get_matches_for_match_type( $matchtype_ids ) );
 			
@@ -819,30 +874,33 @@ class Football_Pool_Shortcodes {
 	//    matchtype : only include matches for the given match type (optional)
 	//    group     : only include matches for the given group (optional)
 	//    num       : how many matches to show (defaults to 5)
+	/**
+	 * @throws Exception
+	 */
 	public static function shortcode_next_matches( $atts ) {
-		global $pool;
-		$date = $matchtype = $group = $num = '';
-		extract( shortcode_atts( array(
-					'date' => 'now',
-					'matchtype' => '',
-					'group' => '',
-					'num' => 5,
-				), $atts ) );
+		$pool = footballpool();
+		$atts = self::clean_atts( $atts );
+		$atts = shortcode_atts( array(
+			'date' => 'now',
+			'matchtype' => '',
+			'group' => '',
+			'num' => 5,
+		), $atts );
 
 		$output = '';
 		
-		$the_date = self::date_helper( $date );
-		if ( !is_numeric( $num ) ) $num = 5;
-		
+		$the_date = self::date_helper( $atts['date'] );
+		$num = !is_numeric( $atts['num'] ) ? 5 : $atts['num'];
+
 		$matches = $pool->matches;
-		$the_matches = $match_ids = $next_matches = [];
+		$the_matches = $next_matches = [];
 		
-		if ( is_numeric( $group ) ) {
+		if ( is_numeric( $atts['group'] ) ) {
 			$groups = new Football_Pool_Groups();
-			$the_matches = $groups->get_plays( (int) $group );
-		} elseif ( $matchtype !== '' ) {
+			$the_matches = $groups->get_plays( (int) $atts['group'] );
+		} elseif ( $atts['matchtype'] !== '' ) {
 			// extract all ids from the matchtype
-			$matchtype_ids = Football_Pool_Utils::extract_ids( $matchtype );
+			$matchtype_ids = Football_Pool_Utils::extract_ids( $atts['matchtype'] );
 			// get all matches for the match types collection
 			$match_ids = $matches->get_matches_for_match_type( $matchtype_ids );
 			
@@ -883,30 +941,33 @@ class Football_Pool_Shortcodes {
 	//    matchtype : only include matches for the given match type (optional)
 	//    group     : only include matches for the given group (optional)
 	//    num       : how many matches to show (defaults to 5)
+	/**
+	 * @throws Exception
+	 */
 	public static function shortcode_last_matches( $atts ) {
-		global $pool;
-		$date = $matchtype = $group = $num = '';
-		extract( shortcode_atts( array(
+		$pool = footballpool();
+		$atts = self::clean_atts( $atts );
+		$atts = shortcode_atts( array(
 			'date' => 'now',
 			'matchtype' => '',
 			'group' => '',
 			'num' => 5,
-		), $atts ) );
+		), $atts );
 
 		$output = '';
 
-		$the_date = self::date_helper( $date );
-		if ( !is_numeric( $num ) ) $num = 5;
+		$the_date = self::date_helper( $atts['date'] );
+		$num = !is_numeric( $atts['num'] ) ? 5 : $atts['num'];
 
 		$matches = $pool->matches;
-		$the_matches = $match_ids = $result_matches = [];
+		$the_matches = $result_matches = [];
 
-		if ( is_numeric( $group ) ) {
+		if ( is_numeric( $atts['group'] ) ) {
 			$groups = new Football_Pool_Groups();
-			$the_matches = $groups->get_plays( (int) $group );
-		} elseif ( $matchtype !== '' ) {
+			$the_matches = $groups->get_plays( (int) $atts['group'] );
+		} elseif ( $atts['matchtype'] !== '' ) {
 			// extract all ids from the matchtype
-			$matchtype_ids = Football_Pool_Utils::extract_ids( $matchtype );
+			$matchtype_ids = Football_Pool_Utils::extract_ids( $atts['matchtype'] );
 			// get all matches for the match types collection
 			$match_ids = $matches->get_matches_for_match_type( $matchtype_ids );
 
@@ -947,21 +1008,27 @@ class Football_Pool_Shortcodes {
 	//    question        : question Id
 	//    text            : a text to show if no prediction table can be displayed, defaults to no text
 	//    use_querystring : if set to 'yes', then the match and/or question will be retrieved from the querystring
+	/**
+	 * @throws Exception
+	 */
 	public static function shortcode_predictions( $atts ) {
-		global $pool;
-		$match = $question = $text = $use_querystring = '';
-		extract( shortcode_atts( array(
-					'match' => null,
-					'question' => null,
-					'text' => '',
-					'use_querystring' => 'no',
-				), $atts ) );
+		$pool = footballpool();
+		$atts = self::clean_atts( $atts );
+		$atts = shortcode_atts( array(
+			'match' => null,
+			'question' => null,
+			'text' => '',
+			'use_querystring' => 'no',
+		), $atts );
 		
 		$output = '';
 		
-		if ( $use_querystring === 'yes' ) {
+		if ( $atts['use_querystring'] === 'yes' ) {
 			$match = Football_Pool_Utils::get_int( 'match' );
 			$question = Football_Pool_Utils::get_int( 'question' );
+		} else {
+			$match = $atts['match'];
+			$question = $atts['question'];
 		}
 		
 		if ( is_numeric( $match ) || is_numeric( $question ) ) {
@@ -989,7 +1056,7 @@ class Football_Pool_Shortcodes {
 			}
 			
 			if ( $output === '' ) {
-				$output = Football_Pool_Utils::xssafe( $text );
+				$output = Football_Pool_Utils::xssafe( $atts['text'] );
 			}
 		}
 		
@@ -1007,27 +1074,29 @@ class Football_Pool_Shortcodes {
 	//                  defaults to 'now'
 	//    text        : text to display if no user or no ranking is found, defaults to ""
 	public static function shortcode_user_ranking( $atts ) {
-		global $pool;
-		$user = $ranking = $date = $text = $league_rank = '';
-		extract( shortcode_atts( array(
-					'user' => '',
-					'ranking' => FOOTBALLPOOL_RANKING_DEFAULT,
-					'date' => 'now',
-					'text' => '',
-					'league_rank' => 'no',
-				), $atts ) );
+		$pool = footballpool();
+		$atts = self::clean_atts( $atts );
+		$atts = shortcode_atts( array(
+			'user' => '',
+			'ranking' => FOOTBALLPOOL_RANKING_DEFAULT,
+			'date' => 'now',
+			'text' => '',
+			'league_rank' => 'no',
+		), $atts );
 		
-		$output = Football_Pool_Utils::xssafe( $text );
+		$output = Football_Pool_Utils::xssafe( $atts['text'] );
 		
-		if ( $user === '' || ! is_numeric( $user ) ) {
+		if ( $atts['user'] === '' || ! is_numeric( $atts['user'] ) ) {
 			$user = get_current_user_id();
+		} else {
+			$user = $atts['user'];
 		}
 		
 		if ( ( int ) $user > 0 ) {
-			if ( $league_rank === 'yes' && $pool->has_leagues ) {
+			if ( $atts['league_rank'] === 'yes' && $pool->has_leagues ) {
 				$league_id = $pool->get_league_for_user( $user );
 				if ( $league_id > 0 ) {
-					$league_ranking = $pool->get_pool_ranking( $league_id, $ranking );
+					$league_ranking = $pool->get_pool_ranking( $league_id, $atts['ranking'] );
 					foreach ( $league_ranking as $row ) {
 						if ( $row['user_id'] == $user ) {
 							$output = $row['ranking'];
@@ -1036,7 +1105,7 @@ class Football_Pool_Shortcodes {
 					}
 				}
 			} else {
-				$rank = $pool->get_user_rank( $user, $ranking, self::date_helper( $date ) );
+				$rank = $pool->get_user_rank( $user, $atts['ranking'], self::date_helper( $atts['date'] ) );
 				if ( $rank !== null ) $output = $rank;
 			}
 		}
@@ -1055,45 +1124,55 @@ class Football_Pool_Shortcodes {
 	//    text    : text to display if no user or no score is found, defaults to "0"
 	//    use_querystring : if set to 'yes', then the user will be retrieved from the querystring
 	public static function shortcode_user_score( $atts ) {
-		global $pool;
-		$user = $ranking = $date = $text = $use_querystring = '';
-		extract( shortcode_atts( array(
+		$pool = footballpool();
+		$atts = self::clean_atts( $atts );
+		$atts = shortcode_atts( array(
 			'user' => '',
 			'ranking' => FOOTBALLPOOL_RANKING_DEFAULT,
 			'date' => 'now',
 			'text' => '0',
 			'use_querystring' => 'no',
-		), $atts ) );
+		), $atts );
 
-		if ( $use_querystring === 'yes' ) {
-			$user = Football_Pool_Utils::get_int( 'user', 0 );
+		if ( $atts['use_querystring'] === 'yes' ) {
+			$user = Football_Pool_Utils::get_int( 'user' );
+			$ranking = Football_Pool_Utils::get_int( 'ranking' );
 		} else {
-			if ( $user === '' || ! is_numeric( $user ) ) {
-				$user = get_current_user_id();
-			}
+			$user = ( $atts['user'] === '' || ! is_numeric( $atts['user'] ) ) ?
+				get_current_user_id() : (int) $atts['user'];
+			$ranking = (int) $atts['ranking'];
 		}
 
-		$output = esc_attr( $text );
+		$output = esc_attr( $atts['text'] );
 
-		if ( (int) $user > 0 ) {
-			$score = $pool->get_user_score( $user, $ranking, self::date_helper( $date ) );
+		if ( $user > 0 ) {
+			$score = $pool->get_user_score( $user, $ranking, self::date_helper( $atts['date'] ) );
 			if ( $score !== null ) $output = $score;
 		}
 		
 		return apply_filters( 'footballpool_shortcode_html_fp-user-score', $output, $atts );
 	}
 
-	//[fp-next-match-form]
-	// Displays the prediction form for the next match. If multiple matches start at the same time,
-	// the shortcode will show all. Except if optional parameter 'num' is given.
-	//
-	//    num     : maximum number of matches to show in the form
-	public static function shortcode_next_match_form( $atts ) {
-		global $pool;
-		$num = 0;
-		extract( shortcode_atts( array(
+	/**
+	 * Shortcode handler for [fp-next-match-form].
+	 *
+	 * Displays the prediction form for the next match.
+	 * If multiple matches start at the same time, all of them are shown, unless the optional `num` parameter is provided.
+	 *
+	 * @param  array<string, string>  $atts {
+	 *     Shortcode attributes.
+	 *
+	 *     @type string $num Maximum number of matches to show in the form.
+	 * }
+	 *
+	 * @return string HTML output of the prediction form.
+	 */
+	public static function shortcode_next_match_form( array $atts ): string {
+		$pool = footballpool();
+		$atts = self::clean_atts( $atts );
+		$atts = shortcode_atts( array(
 			'num' => 0,
-		), $atts ) );
+		), $atts );
 
 		$user_id = get_current_user_id();
 		$user_is_player = $pool->user_is_player( $user_id );
@@ -1115,7 +1194,7 @@ class Football_Pool_Shortcodes {
 		if ( $next_matches === false ) {
 			$output .= '<span class="no-next-match"></span>';
 		} else {
-			$num = (int) $num;
+			$num = (int) $atts['num'];
 			if ( $num > 0 ) $next_matches = array_slice( $next_matches, 0, $num, true );
 
 			$match_ids = [];
@@ -1133,33 +1212,56 @@ class Football_Pool_Shortcodes {
 		return apply_filters( 'footballpool_shortcode_html_fp-next-match-form', $output, $atts );
 	}
 
-	//[fp-predictionform] 
-	//    All arguments can be entered in the following formats (example for matches):
-	//        match 1               -> match="1"
-	//        matches 1 to 5        -> match="1-5"
-	//        matches 1, 3 and 6    -> match="1,3,6"
-	//        matches 1 to 5 and 10 -> match="1-5,10"
-	//    If an argument is left empty it is ignored. Matches are always displayed first.
-	//    If the current visitor is not logged in, the shortcode returns a message to log on or register.
-	//
-	//    match     : collection of match ids 
-	//    question  : collection of question ids
-	//    matchtype : collection of match type ids
-	public static function shortcode_predictionform( $atts ) {
-		global $pool;
-		$default_message =
-			sprintf( __( 'You have to be a <a href="%s">registered</a> user and <a href="%s">logged in</a> to play in this pool.', 'football-pool' )
-						, wp_registration_url()
-						, wp_login_url( get_permalink() )
-					);
-		$match = $question = $matchtype = $text = '';
-		extract( shortcode_atts( array(
-					'match' => '',
-					'question' => '',
-					'matchtype' => '',
-					'text' => $default_message,
-				), $atts ) );
-		
+	/**
+	 * Shortcode handler for [fp-predictionform].
+	 *
+	 * Displays a prediction form for matches, questions, or match types.
+	 *
+	 * Arguments can be entered in multiple formats (example shown for matches):
+	 * - `match="1"`            → match 1
+	 * - `match="1-5"`          → matches 1 to 5
+	 * - `match="1,3,6"`        → matches 1, 3 and 6
+	 * - `match="1-5,10"`       → matches 1 to 5 and 10
+	 *
+	 * If an argument is left empty it will be ignored. Matches are always displayed first.
+	 * If the current visitor is not logged in, the shortcode returns a message prompting them to log in or register.
+	 *
+	 * @param  array<string, string>  $atts {
+	 *     Shortcode attributes.
+	 *
+	 *     @type string $match     Collection of match IDs.
+	 *     @type string $question  Collection of question IDs.
+	 *     @type string $matchtype Collection of match type IDs.
+	 * }
+	 *
+	 * @return string HTML output of the prediction form or login/register message.
+	 *
+	 * @throws Exception If something goes wrong during rendering.
+	 */
+	public static function shortcode_predictionform( array $atts ): string {
+		$pool = footballpool();
+
+		//$atts = self::clean_atts( $atts );
+		$atts = shortcode_atts( array(
+			'match' => '',
+			'question' => '',
+			'matchtype' => '',
+			'text' => false,
+		), $atts );
+
+		if ( $atts['text'] === false ) {
+			$text = sprintf(
+				__(
+					'You have to be a <a href="%s">registered</a> user and <a href="%s">logged in</a> to play in this pool.',
+					'football-pool'
+				),
+				wp_registration_url(),
+				wp_login_url( get_permalink() )
+			);
+		} else {
+			$text = Football_Pool_Utils::xssafe( $atts['text'] );
+		}
+
 		$user_id = get_current_user_id();
 		$user_is_player = $pool->user_is_player( $user_id );
 
@@ -1176,9 +1278,9 @@ class Football_Pool_Shortcodes {
 		$output = $pool->prediction_form_update( $id );
 		
 		// extract all ids from the arguments
-		$match_ids = Football_Pool_Utils::extract_ids( $match );
-		$question_ids = Football_Pool_Utils::extract_ids( $question );
-		$matchtype_ids = Football_Pool_Utils::extract_ids( $matchtype );
+		$match_ids = Football_Pool_Utils::extract_ids( $atts['match'] );
+		$question_ids = Football_Pool_Utils::extract_ids( $atts['question'] );
+		$matchtype_ids = Football_Pool_Utils::extract_ids( $atts['matchtype'] );
 		// add all matches in the match types collection to the match_ids
 		$match_ids = array_merge( $match_ids, $matches->get_matches_for_match_type( $matchtype_ids ) );
 
@@ -1198,6 +1300,7 @@ class Football_Pool_Shortcodes {
 	//		id	: show the standing for the group with this id, defaults to a non-existing group and thus
 	//			  will not show anything when none is given.
 	public static function shortcode_group( $atts ) {
+		$atts = self::clean_atts( $atts );
 		$atts = shortcode_atts( array(
 			'id' => 0
 		), $atts );
@@ -1223,8 +1326,10 @@ class Football_Pool_Shortcodes {
 	//				  possible values 'now', 'postdate', a datetime value formatted like this 'Y-m-d H:i',
 	//				  defaults to 'now'
 	public static function shortcode_ranking( $atts ) {
-		global $pool;
+		$pool = footballpool();
 		$default_num = 5;
+
+		$atts = self::clean_atts( $atts );
 		$atts = shortcode_atts( array(
 			'league' => FOOTBALLPOOL_LEAGUE_ALL,
 			'num' => $default_num,
@@ -1266,69 +1371,69 @@ class Football_Pool_Shortcodes {
 	}
 	
 	//[fp-countdown]
-	public static function shortcode_countdown( $atts ) {
-		global $pool;
-		$date = $match = $texts = $display = $format = $format_string = '';
-		extract( shortcode_atts( array(
-					'date' => '',
-					'match' => '',
-					'texts' => '',
-					'display' => 'block',
-					'format' => 2,
-					'format_string' => '',
-				), $atts ) );
-		
+
+	/**
+	 * @throws Exception
+	 */
+	public static function shortcode_countdown( array $atts ): string {
+		$pool = footballpool();
+
+		$atts = self::clean_atts( $atts );
+		$atts = shortcode_atts( array(
+			'date'          => '',
+			'match'         => '',
+			'texts'         => '',
+			'display'       => 'block',
+			'format'        => 2,
+			'format_string' => '',
+		), $atts );
+
+		$format = is_numeric( $atts['format'] ) ? (int) $atts['format'] : 2;
+
 		$matches = $pool->matches;
-		
-		$id = Football_Pool_Utils::get_counter_value( 'fp_countdown_id' );
-		
-		if ( $format_string === '' ) {
+		$id      = Football_Pool_Utils::get_counter_value( 'fp_countdown_id' );
+
+		// Default format strings
+		if ( $atts['format_string'] === '' ) {
 			switch ( $format ) {
 				case 1:
-					$format_string = '{s} {sec}';
+					$atts['format_string'] = '{s} {sec}';
 					break;
 				case 2:
-					$format_string = '{d} {days}, {h} {hrs}, {m} {min}, {s} {sec}';
+					$atts['format_string'] = '{d} {days}, {h} {hrs}, {m} {min}, {s} {sec}';
 					break;
 				case 3:
-					$format_string = '{h} {hrs}, {m} {min}, {s} {sec}';
+					$atts['format_string'] = '{h} {hrs}, {m} {min}, {s} {sec}';
 					break;
 				case 4:
-					$format_string = '{d} {days}, {h} {hrs}, {m} {min}';
+					$atts['format_string'] = '{d} {days}, {h} {hrs}, {m} {min}';
 					break;
 				case 5:
-					$format_string = '{h} {hrs}, {m} {min}';
+					$atts['format_string'] = '{h} {hrs}, {m} {min}';
 					break;
 			}
 		}
-		$format_string = Football_Pool_Utils::js_string_escape( $format_string );
-		
-		$countdown_date = 0;
-		if ( (int) $match > 0 ) {
-			$match_info = $matches->get_match_info( (int) $match );
-			if ( array_key_exists( 'play_date', $match_info ) ) {
+
+		// Resolve countdown date
+		$countdown_date = null;
+		if ( (int) $atts['match'] > 0 ) {
+			$match_info = $matches->get_match_info( (int) $atts['match'] );
+			if ( isset( $match_info['play_date'] ) ) {
 				$countdown_date = new DateTime( Football_Pool_Utils::date_from_gmt( $match_info['play_date'] ) );
 			}
-		} elseif ( $match === 'next' ) {
+		} elseif ( $atts['match'] === 'next' ) {
 			$match_info = $matches->get_next_match();
 			if ( $match_info !== false ) {
 				$countdown_date = new DateTime( Football_Pool_Utils::date_from_gmt( $match_info[0]['play_date'] ) );
 			}
 		}
-		
-		if ( ! is_object( $countdown_date ) ) {
-			$countdown_date = date_create( $date );
-			if ( $date === '' || $countdown_date === false ) {
-				// Countdown shortcode defaults to the first match if no valid date can be created with the
-				// other parameters.
+
+		if ( ! $countdown_date instanceof DateTime ) {
+			$countdown_date = date_create( $atts['date'] );
+			if ( $atts['date'] === '' || $countdown_date === false ) {
 				$first_match = $matches->get_first_match_info();
 				if ( $first_match === false ) {
-					// No first match found, so we need to exit 'gracefully' to prevent the shortcode from throwing
-					// a critical error (can be a bit nasty if you have the shortcode on the homepage).
-					trigger_error(
-						'Shortcode [fp-countdown] was used to count down to a match, but no match was found.',
-						E_USER_WARNING
-					);
+					error_log( 'Football Pool: Shortcode [fp-countdown] was used but no match was found.' );
 					return '<span class="shortcode countdown-shortcode"><!--no match found--></span>';
 				} else {
 					$countdown_date = new DateTime(
@@ -1337,47 +1442,59 @@ class Football_Pool_Shortcodes {
 				}
 			}
 		}
-		
-		if ( $texts === 'none' ) $texts = ';;;'; // 4 empty strings overwriting the default texts
-		
-		$texts = explode( ';', $texts );
-		
-		if ( is_array( $texts ) && count( $texts ) === 4 ) {
-			$texts[0] = esc_js( $texts[0] );
-			$texts[1] = esc_js( $texts[1] );
-			$texts[2] = esc_js( $texts[2] );
-			$texts[3] = esc_js( $texts[3] );
-			$extra_text = "{'pre_before':'{$texts[0]}', 'post_before':'{$texts[1]}', 'pre_after':'{$texts[2]}', 'post_after':'{$texts[3]}'}";
-		} else {
-			$extra_text = 'null';
+
+		// Handle optional texts
+		$extra_text = '';
+		if ( $atts['texts'] === 'none' || $atts['texts'] === '' ) {
+			$atts['texts'] = ';;;';
 		}
-		
-		$year  = $countdown_date->format( 'Y' );
-		$month = $countdown_date->format( 'm' );
-		$day   = $countdown_date->format( 'd' );
-		$hour  = $countdown_date->format( 'H' );
-		$min   = $countdown_date->format( 'i' );
-		$sec   = 0;
-		
-		$output = '';
-		if ( $display === 'inline' ) {
-			$output .= "<span class='shortcode countdown-shortcode' id='countdown-{$id}'>&nbsp;</span>";
-		} else {
-			$output .= "<div class='shortcode countdown-shortcode block'><h2 id='countdown-{$id}'>&nbsp;</h2></div>";
+		$parts = explode( ';', $atts['texts'] );
+		if ( count( $parts ) === 4 ) {
+			$extra_text = array(
+				'pre_before' => $parts[0],
+				'post_before'=> $parts[1],
+				'pre_after'  => $parts[2],
+				'post_after' => $parts[3],
+			);
 		}
 
-		/** @noinspection CommaExpressionJS */
-		$output .= "<script type='text/javascript'>
-					FootballPool.countdown( '#countdown-{$id}', {$extra_text}, {$year}, {$month}, {$day}, {$hour}, {$min}, {$sec}, {$format}, '{$format_string}' );
-					window.setInterval( function() { FootballPool.countdown( '#countdown-{$id}', {$extra_text}, {$year}, {$month}, {$day}, {$hour}, {$min}, {$sec}, {$format}, '{$format_string}' ); }, 1000 );
-					</script>";
-		
+		// Strip XSS obfuscation
+		if ( is_array( $extra_text ) ) {
+			$extra_text = array_map( ['Football_Pool_Utils', 'normalize_input'], $extra_text );
+		}
+		$atts['format_string'] = Football_Pool_Utils::normalize_input( $atts['format_string'] );
+
+		// Build JSON payload
+		$data = array(
+			'id'            => "countdown-{$id}",
+			'extra_text'    => $extra_text,
+			'year'          => (int) $countdown_date->format( 'Y' ),
+			'month'         => (int) $countdown_date->format( 'm' ),
+			'day'           => (int) $countdown_date->format( 'd' ),
+			'hour'          => (int) $countdown_date->format( 'H' ),
+			'min'           => (int) $countdown_date->format( 'i' ),
+			'sec'           => 0,
+			'format'        => $format,
+			'format_string' => $atts['format_string'],
+		);
+		$json = wp_json_encode( $data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT );
+
+		// HTML output
+		if ( ( $atts['display'] === 'inline' ) ) {
+			$output = "<span class='shortcode countdown-shortcode' id='countdown-{$id}'>&nbsp;</span>";
+		} else {
+			$output = "<div class='shortcode countdown-shortcode block'><h2 id='countdown-{$id}'>&nbsp;</h2></div>";
+		}
+
+		$output .= "<script>FootballPool.countdown( {$json} );</script>";
+
 		return apply_filters( 'footballpool_shortcode_html_fp-countdown', $output, $atts );
 	}
 	
 	//[fp-link slug=""]
 	public static function shortcode_link( $atts ) {
 		$output = '';
+		$atts = self::clean_atts( $atts );
 		if ( isset( $atts['slug'] ) ) {
 			$id = Football_Pool_Utils::get_fp_option( 'page_id_' . $atts['slug'] );
 			if ( $id ) {
@@ -1390,67 +1507,72 @@ class Football_Pool_Shortcodes {
 	//[fp-register]
 	//		title	: title parameter for the <a href>
 	public static function shortcode_register_link( $atts, $content = '' ) {
-		$title = $new = '';
-		extract( shortcode_atts( array(
-					'title' => '',
-					'new' => '0',
-				), $atts ) );
+		$atts = self::clean_atts( $atts );
+		$atts = shortcode_atts( array(
+			'title' => '',
+			'new' => '0',
+		), $atts );
 		
-		$title = ( $title !== '' ) ? sprintf( ' title="%s"', Football_Pool_Utils::xssafe( $title ) ) : '';
+		$title = $atts['title'] !== '' ? sprintf( ' title="%s"', Football_Pool_Utils::xssafe( $atts['title'] ) ) : '';
 		$site_url = get_site_url();
 		$redirect = get_permalink();
-		$redirect = ( $redirect !== false ) ? sprintf( '&amp;redirect_to=%s', $redirect ) : '';
-		$content = ( $content > '' ) ? $content : __( 'register', 'football-pool' );
-		$target = ( $new == '1' ) ? ' target="_blank"' : '';
+		$redirect = $redirect !== false ? sprintf( '&amp;redirect_to=%s', $redirect ) : '';
+		$content = $content > '' ? $content : __( 'register', 'football-pool' );
+		$target = $atts['new'] === '1' ? ' target="_blank"' : '';
 		
-		$output = sprintf( '<a href="%s/wp-login.php?action=register%s"%s%s>%s</a>'
-						, $site_url
-						, $redirect
-						, $title
-						, $target
-						, $content
-					);
+		$output = sprintf( '<a href="%s/wp-login.php?action=register%s"%s%s>%s</a>',
+			$site_url,
+			$redirect,
+			$title,
+			$target,
+			$content
+		);
 		return apply_filters( 'footballpool_shortcode_html_fp-register', $output, $atts );
 	}
 
 	//[fp-plugin-option]
 	//    Displays the value of a plugin setting
 	public static function shortcode_plugin_option( $atts ) {
-		$option = $default = $type = '';
-		extract( shortcode_atts( array(
+		$atts = self::clean_atts( $atts );
+		$atts = shortcode_atts( array(
 			'option' => '',
 			'default' => '',
 			'type' => 'text',
-		), $atts ) );
-		return Football_Pool_Utils::get_fp_option( $option, $default, $type );
+		), $atts );
+		return Football_Pool_Utils::get_fp_option( $atts['option'], $atts['default'], $atts['type'] );
 	}
 
 	//[fp-fullpoints]
 	public static function shortcode_fullpoints( $atts ) {
+		$atts = self::clean_atts( $atts );
 		$output = Football_Pool_Utils::get_fp_option( 'fullpoints', FOOTBALLPOOL_FULLPOINTS, 'int' );
 		return apply_filters( 'footballpool_shortcode_html_fp-fullpoints', $output, $atts );
 	}
 
 	//[fp-totopoints]
 	public static function shortcode_totopoints( $atts ) {
+		$atts = self::clean_atts( $atts );
 		$output = Football_Pool_Utils::get_fp_option( 'totopoints', FOOTBALLPOOL_TOTOPOINTS, 'int' );
 		return apply_filters( 'footballpool_shortcode_html_fp-totopoints', $output, $atts );
 	}
 
 	//[fp-goalpoints]
 	public static function shortcode_goalpoints( $atts ) {
+		$atts = self::clean_atts( $atts );
 		$output = Football_Pool_Utils::get_fp_option( 'goalpoints', FOOTBALLPOOL_GOALPOINTS, 'int' );
 		return apply_filters( 'footballpool_shortcode_html_fp-goalpoints', $output, $atts );
 	}
 
 	//[fp-diffpoints]
 	public static function shortcode_diffpoints( $atts ) {
+		$atts = self::clean_atts( $atts );
 		$output = Football_Pool_Utils::get_fp_option( 'diffpoints', FOOTBALLPOOL_DIFFPOINTS, 'int' );
 		return apply_filters( 'footballpool_shortcode_html_fp-diffpoints', $output, $atts );
 	}
 	
 	//[fp-joker-multiplier]
 	public static function shortcode_jokermultiplier( $atts ) {
+		$atts = self::clean_atts( $atts );
 		$output = Football_Pool_Utils::get_fp_option( 'joker_multiplier', FOOTBALLPOOL_JOKERMULTIPLIER, 'int' );
 		return apply_filters( 'footballpool_shortcode_html_fp-jokermultiplier', $output, $atts );
 	}

@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2025 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -139,7 +139,10 @@ class Football_Pool_Admin_Teams extends Football_Pool_Admin {
 		$groups = Football_Pool_groups::get_groups();
 		$options = [];
 		foreach ( $groups as $group ) {
-			$options[] = ['value' => $group->id, 'text' => $group->name];
+			$options[] = [
+				'value' => $group->id,
+				'text' => Football_Pool_Utils::xssafe( $group->name )
+			];
 		}
 		$groups = $options;
 		

@@ -3,7 +3,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -28,66 +28,70 @@
 defined( 'ABSPATH' ) or die( 'Cannot access widgets directly.' );
 add_action( 'widgets_init', function() { register_widget( 'Football_Pool_Next_Prediction_Widget' ); } );
 
-// dummy var for translation files
-$fp_translate_this = __( 'Countdown Next Prediction Widget', 'football-pool' );
-$fp_translate_this = __( 'this widget displays the time that is left to predict the next match (optionally only for a given team).', 'football-pool' );
-$fp_translate_this = __( 'countdown', 'football-pool' );
-$fp_translate_this = __( 'Team', 'football-pool' );
-$fp_translate_this = __( 'Also show when not logged in?', 'football-pool' );
-$fp_translate_this = __( 'Format', 'football-pool' );
-$fp_translate_this = __( 'Format string', 'football-pool' );
-$fp_translate_this = __( 'see help page for more info', 'football-pool' );
-
 class Football_Pool_Next_Prediction_Widget extends Football_Pool_Widget {
 	protected array $matches;
-	protected $widget = array(
-		'name' => 'Countdown Next Prediction Widget',
-		'description' => 'this widget displays the time that is left to predict the next match (optionally only for a given team).',
-		'do_wrapper' => true, 
-		
-		'fields' => array(
-			array(
-				'name' => 'Title',
-				'desc' => '',
-				'id' => 'title',
-				'type' => 'text',
-				'std' => 'countdown'
-			),
-			array(
-				'name' => 'Format',
-				'desc' => '',
-				'id' => 'format',
-				'type' => 'select',
-				'options' => [] // get data later on
-			),
-			array(
-				'name' => 'Format string',
-				'desc' => 'see help page for more info',
-				'id' => 'format_string',
-				'type' => 'text',
-				'std' => ''
-			),
-			array(
-				'name' => 'Team',
-				'desc' => '',
-				'id' => 'team_id',
-				'type' => 'select',
-				'options' => [] // get data from the database later on
-			),
-			array(
-				'name' => 'Also show when not logged in?',
-				'desc' => '',
-				'id' => 'all_users',
-				'type' => 'checkbox',
-			),
-		)
-	);
-	
+	protected $widget = [];
+
+	public function __construct() {
+		$this->widget = array(
+			'name' => __( 'Countdown Next Prediction Widget', 'football-pool' ),
+			'description' => __( 'this widget displays the time that is left to predict the next match (optionally only for a given team).', 'football-pool' ),
+			'do_wrapper' => true,
+
+			'fields' => array(
+				array(
+					'name' => __( 'Title', 'football-pool' ),
+					'desc' => '',
+					'id' => 'title',
+					'type' => 'text',
+					'std' => __( 'countdown', 'football-pool' )
+				),
+				array(
+					'name' => __( 'Format', 'football-pool' ),
+					'desc' => '',
+					'id' => 'format',
+					'type' => 'select',
+					'options' => [] // get data later on
+				),
+				array(
+					'name' => __( 'Format string', 'football-pool' ),
+					'desc' => __( 'see help page for more info', 'football-pool' ),
+					'id' => 'format_string',
+					'type' => 'text',
+					'std' => ''
+				),
+				array(
+					'name' => __( 'Team', 'football-pool' ),
+					'desc' => '',
+					'id' => 'team_id',
+					'type' => 'select',
+					'options' => [] // get data from the database later on
+				),
+				array(
+					'name' => __( 'Also show when not logged in?', 'football-pool' ),
+					'desc' => '',
+					'id' => 'all_users',
+					'type' => 'checkbox',
+				),
+			)
+		);
+
+		$classname = str_replace( '_', '', get_class( $this ) );
+		parent::__construct(
+			$classname,
+			$this->widget['name'] ?? $classname,
+			$this->widget['description']
+		);
+	}
+
+	/**
+	 * @throws Exception
+	 */
 	public function html( string $title, array $args, array $instance ) {
 		extract( $args );
-		
-		if ( ! isset( $instance['format'] ) ) $instance['format'] = 3;
-		
+
+		$format = isset( $instance['format'] ) && is_numeric( $instance['format'] ) ? (int) $instance['format'] : 3;
+
 		$teams = new Football_Pool_Teams;
 		$statisticspage = Football_Pool::get_page_link( 'statistics' );
 		$predictionpage = Football_Pool::get_page_link( 'pool' ) . '#match-' . $this->matches[0]['id'] . '-1';
@@ -103,25 +107,44 @@ class Football_Pool_Next_Prediction_Widget extends Football_Pool_Widget {
 		}
 		
 		$countdown_date = new DateTime( Football_Pool_Utils::date_from_gmt( $this->matches[0]['play_date'] ) );
-		$year  = $countdown_date->format( 'Y' );
-		$month = $countdown_date->format( 'm' );
-		$day   = $countdown_date->format( 'd' );
-		$hour  = $countdown_date->format( 'H' );
-		$min   = $countdown_date->format( 'i' );
+		$year  = (int) $countdown_date->format( 'Y' );
+		$month = (int) $countdown_date->format( 'm' );
+		$day   = (int) $countdown_date->format( 'd' );
+		$hour  = (int) $countdown_date->format( 'H' );
+		$min   = (int) $countdown_date->format( 'i' );
 		$sec = 0;
 		
 		$id = Football_Pool_Utils::get_counter_value( 'fp_countdown_id' );
-		
-		$extra_texts = sprintf(
-			"{'pre_before':'%1\$s','post_before':'%2\$s','pre_after':'%3\$s','post_after':'%4\$s'}"
-			, esc_js( _x( 'Just ', "Used in the Next prediction widget (don't forget the space at the end of the string)", 'football-pool' ) )
-			, esc_js( _x( ' until', "Used in the Next prediction widget (don't forget the space at the start of the string)", 'football-pool' ) )
-			, esc_js( _x( 'started ', "Used in the Next prediction widget (don't forget the space at the end of the string)", 'football-pool' ) )
-			, esc_js( _x( ' ago:', "Used in the Next prediction widget (don't forget the space at the start of the string)", 'football-pool' ) )
+
+		$extra_text = array(
+			'pre_before' =>
+				_x(
+					'Just ',
+					"Used in the Next prediction widget (don't forget the space at the end of the string)",
+					'football-pool'
+				),
+			'post_before'=>
+				_x(
+					' until',
+					"Used in the Next prediction widget (don't forget the space at the start of the string)",
+					'football-pool'
+				),
+			'pre_after'  =>
+				_x(
+					'started ',
+					"Used in the Next prediction widget (don't forget the space at the end of the string)",
+					'football-pool'
+				),
+			'post_after' =>
+				_x(
+					' ago:',
+					"Used in the Next prediction widget (don't forget the space at the start of the string)",
+					'football-pool'
+				),
 		);
-		
+
 		if ( ! array_key_exists( 'format_string', $instance ) || $instance['format_string'] == '' ) {
-			switch ( $instance['format'] ) {
+			switch ( $format ) {
 				case 1:
 					$format_string = '{s} {sec}';
 					break;
@@ -141,20 +164,36 @@ class Football_Pool_Next_Prediction_Widget extends Football_Pool_Widget {
 		} else {
 			$format_string = $instance['format_string'];
 		}
-		
-		$format_string = Football_Pool_Utils::js_string_escape( $format_string );
+
+		// Strip XSS obfuscation
+		$extra_text = array_map( ['Football_Pool_Utils', 'normalize_input'], $extra_text );
+		$format_string = Football_Pool_Utils::normalize_input( $format_string );
+
+		// build JSON payload
+		$data = array(
+			'id'            => "next-prediction-countdown-{$id}",
+			'extra_text'    => $extra_text,
+			'year'          => $year,
+			'month'         => $month,
+			'day'           => $day,
+			'hour'          => $hour,
+			'min'           => $min,
+			'sec'           => 0,
+			'format'        => $format,
+			'format_string' => $format_string,
+		);
+		$json = wp_json_encode( $data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT );
 
 		/** @noinspection HtmlUnknownTarget */
-		$output .= sprintf( '<div class="wrapper next-prediction-countdown"><p><a href="%1$s" title="%3$s" id="next-prediction-countdown-%2$s">&nbsp;</a></p>'
-				, $predictionpage
-				, $id
-				, esc_attr__( 'click to enter prediction', 'football-pool' )
+		$output .= sprintf(
+			'<div class="wrapper next-prediction-countdown"><p>' .
+				'<a href="%1$s" title="%3$s" id="next-prediction-countdown-%2$s">&nbsp;</a></p>',
+			$predictionpage,
+			$id,
+			esc_attr__( 'click to enter prediction', 'football-pool' )
 		);
-		/** @noinspection CommaExpressionJS */
-		$output .= "<script>
-				FootballPool.countdown( '#next-prediction-countdown-{$id}', {$extra_texts}, {$year}, {$month}, {$day}, {$hour}, {$min}, {$sec}, {$instance['format']}, '{$format_string}' );
-				window.setInterval( function() { FootballPool.countdown( '#next-prediction-countdown-{$id}', {$extra_texts}, {$year}, {$month}, {$day}, {$hour}, {$min}, {$sec}, {$instance['format']}, '{$format_string}' ); }, 1000 );
-				</script>";
+
+		$output .= "<script>FootballPool.countdown( {$json} );</script>";
 		
 		foreach ( $this->matches as $match ) {
 			if ( $teams->show_team_links ) {
@@ -232,17 +271,8 @@ class Football_Pool_Next_Prediction_Widget extends Football_Pool_Widget {
 		$this->widget['fields'][3]['options'] = $options;
 	}
 
-	public function __construct() {
-		$classname = str_replace( '_', '', get_class( $this ) );
-		parent::__construct( 
-			$classname, 
-			$this->widget['name'] ?? $classname,
-			$this->widget['description']
-		);
-	}
-	
 	public function widget( $args, $instance ) {
-		global $pool;
+		$pool = footballpool();
 		// only for logged-in users?
 		if ( isset( $instance['all_users'] ) && $instance['all_users'] != 'on' && ! is_user_logged_in() ) return;
 		
@@ -254,10 +284,7 @@ class Football_Pool_Next_Prediction_Widget extends Football_Pool_Widget {
 
 		if ( $next_matches === false ) {
 			// Do not output a widget if there is no next match but throw a warning
-			trigger_error(
-				'Football Pool Next prediction widget used, but no match was found.',
-				E_USER_NOTICE
-			);
+			error_log( 'Football Pool: Next prediction widget used, but no match was found.' );
 		} else {
 			$this->matches = $next_matches;
 

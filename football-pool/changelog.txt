@@ -1,4 +1,50 @@
 == Changelog ==
+= 2.13.5 =
+* Security: Reflected Cross-Site Scripting vulnerability for authenticated users in shoutbox widget.
+
+= 2.13.4 =
+* Bug fix: Removed unexisting asset load in admin.
+
+= 2.13.3 =
+* Update: Added final 6 teams in CSV for the 2026 FIFA World Cup.
+
+= 2.13.2 =
+* New: Added a matches CSV for the 2026 FIFA World Cup (please note that there are still some teams not known).
+* New: Option to disable adding new shoutbox messages via the widget (only add via admin area).
+* Update: Auto-set user answers option in bonus questions now ignores leading and trailing spaces in answers.
+* Update: Removed some deprecated warnings from the CSV import.
+* Tweak: Show user ID next to display name in the audit log.
+* Tweak: Some refactoring in the $pool->user_name() calls.
+* Tweak: Refactoring of global $pool instance. With backwards compatibility for extensions (at least, I hope so).
+* Tweak: Reordered the methods in the Football_Pool_Pool class (but it is still a mess).
+* Tweak: Small visual change to the cancel/close button of the calculation modal in the admin.
+* Tweak: Removed some redundant styling from the default stylesheet and made some small changes.
+* Bug fix: Fixed a bug in the format input for 2 shortcodes.
+
+= 2.13.0 =
+* New: Added an option to edit matches in your local time zone (based on your WP setting).
+* New: Added support for a new meta header for the CSV to define a time zone offset for the times in the file. This makes it possible to import files in a different/local time and adjust accordingly.
+* Update: Changed the minimum required WP version to 5.3.
+* Update: Made changes to the countdown shortcode javascript function. If you are using this in your own code, make sure you change the initiation of the countdown by passing the arguments as an object.
+* Tweak: Made some changes in the date handling in some parts of the plugin.
+* Tweak: Fixed some display issues in the shortcode MCE dialog and added titles to the labels.
+* Bug fix: Made the XSS prevention in all shortcode functions more strict.
+
+= 2.12.6 =
+* Tweak: Some refactoring of the Widget classes.
+* Bug fix: Activate function throws an "Uncaught TypeError" on activation when activating via WP CLI.
+* Bug fix: Fix for XSS vulnerability in some shortcode functions.
+
+= 2.12.5 =
+* Tweak: Some updates to the help page.
+* Bug fix: Fix for XSS vulnerability (admin interface only).
+
+= 2.12.4 =
+* Bug fix: Moved translation strings inside classes to prevent early loading of textdomain.
+
+= 2.12.3 =
+* Bug fix: Fix for CSRF vulnerability.
+
 = 2.12.2 =
 * Bug fix: some parts of the code did not cast the league to int when passing it to the get_pool_ranking_limited() function. Thanks to Colin for reporting.
 
@@ -51,7 +97,7 @@
 * Bug fix: Removed a XSS vulnerability from some shortcodes (low priority).
 
 = 2.11.3 =
-* Updated: Removed admin icon from plugin assets and added SVG base64 URI in menu definition.
+* Update: Removed admin icon from plugin assets and added SVG base64 URI in menu definition.
 * Tweak: Removed deprecated warning for dynamic property in Football_Pool_Pool class.
 * Tweak: Some refactoring of code.
 * Tweak: Stop loading of plugin when doing cron actions (only needed if I ever decide to add cron actions).
@@ -59,7 +105,7 @@
 
 = 2.11.2 =
 * Tweak: Some refactoring of code.
-* Updated: Changed the required PHP version to 7.4.
+* Update: Changed the required PHP version to 7.4.
 * Bug fix: League dropdown in the user admin caused a fatal error in certain cases. Thanks Ron Robinson for reporting the issue.
 
 = 2.11.1 =
@@ -72,10 +118,10 @@
 * New: Shortcode [fp-last-matches] that displays the last started matches before a certain date. Similar parameters as [fp-next-matches].
 * New: Added parameters to the [fp-user-list] to limit the output with the 'num' parameter and to display only the latest registrations (based on and ordered by the WP_User's user_registered field) with the 'latest' parameter.
 * New: Added 'is_favorite' parameter to teams. This parameter is used to add an extra CSS class to matches.
-* Updated: AJAX saves on the frontend are now disabled by default and I made it a setting in the options screen (but it can also still be changed via the FOOTBALLPOOL_FRONTEND_AJAX constant in the wp-config).
-* Updated: Changed the required PHP version to 7.3.
-* Updated: Removed deprecated code for loading custom MO files. This should be done via the 'override_load_textdomain' filter. See FAQ for more info.
-* Updated: Removed league ID from the sorting of the ranking.
+* Update: AJAX saves on the frontend are now disabled by default and I made it a setting in the options screen (but it can also still be changed via the FOOTBALLPOOL_FRONTEND_AJAX constant in the wp-config).
+* Update: Changed the required PHP version to 7.3.
+* Update: Removed deprecated code for loading custom MO files. This should be done via the 'override_load_textdomain' filter. See FAQ for more info.
+* Update: Removed league ID from the sorting of the ranking.
 * Tweak: Added different admin screen option 'items per page' settings for bonus questions and user answers.
 * Tweak: Removed the old wp_enqueue_media check for WP versions lower than 3.5 (this is no longer needed).
 * Tweak: Fixed some deprecated warnings (tested in PHP 8.1).
@@ -86,13 +132,13 @@
 * Bug fix: Fixed the Bonus question pie chart. Thanks @fimo66 for reporting the issue.
 
 = 2.10.3 =
-* Updated: Changed the match schedule because some matches had the wrong UTC time (last games of the group phase and in the final rounds).
+* Update: Changed the match schedule because some matches had the wrong UTC time (last games of the group phase and in the final rounds).
 
 = 2.10.2 =
-* Updated: Changed the match schedule because the first couple of lines had the wrong year.
+* Update: Changed the match schedule because the first couple of lines had the wrong year.
 
 = 2.10.1 =
-* Updated: Changed the match schedule because FIFA changed the Qatar vs. Ecuador match date.
+* Update: Changed the match schedule because FIFA changed the Qatar vs. Ecuador match date.
 * New: Added a setting to also show the actual result on the prediction form.
 * New: Added a setting to be able to disable the 'unsaved changes check' on the prediction form.
 * New: Shortcode [fp-user-score] now also supports the "use_querystring" parameter.
@@ -139,7 +185,7 @@
 * Clean-up: I removed the logout widget from the plugin since WordPress comes with its own widget.
 
 = 2.9.7 =
-* Updated: Prepared the widgets for the new Widget blocks admin that will be introduced in WP 5.8.
+* Update: Prepared the widgets for the new Widget blocks admin that will be introduced in WP 5.8.
 * Tweak: Changed the moment when the admin menu gets initiated.
 * Bug fix: When a joker is used and activated, the joker icon should be disabled on the form. This did not work when using the date descending sort for matches or when the 'only open matches' plugin was activated (thanks Roy te Lindert for reporting).
 * Bug fix: In some cases the v2.9.0 db update script was not executed (thanks @potjekak for reporting).
@@ -150,7 +196,7 @@
 * Tweak: Changed the group standing rules to make it easier to override the sorting manually, because the rules of the UEFA for the UEFA 2020 championship did not match the general rules in the code (thanks af3 for reporting).
 
 = 2.9.5 =
-* Updated: EURO 2020 schedule.
+* Update: EURO 2020 schedule.
 
 = 2.9.4 =
 * Bug fix: Football Pool widgets couldn't be saved anymore (thanks to dar26ber and Ernst for reporting).

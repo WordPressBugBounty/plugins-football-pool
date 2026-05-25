@@ -3,7 +3,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -23,7 +23,7 @@
 
 class Football_Pool_User_Page {
 	public function page_content() {
-		global $pool;
+		$pool = footballpool();
 
 		// Store current value so we can restore later
 		$always_show_predictions = $pool->matches->always_show_predictions;
@@ -83,7 +83,7 @@ class Football_Pool_User_Page {
 				);
 			}
 			
-			$match_rows = $matches->get_match_info_for_user( $user_id, null );
+			$match_rows = $matches->get_match_info_for_user( $user_id );
 			if ( Football_Pool_Utils::get_fp_option( 'user_page_show_predictions_only', 0, 'int' ) === 1 ) {
 				// Filter out matches without a prediction
 				$match_rows = array_filter( $match_rows, array( $this, 'remove_unpredicted_matches' ) );

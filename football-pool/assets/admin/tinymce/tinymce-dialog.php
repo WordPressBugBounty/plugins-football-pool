@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -27,7 +27,7 @@ require_once( 'tinymce-dialog.functions.php' );
 $site_url = get_option( 'siteurl' );
 $admin_url = get_admin_url();
 
-$pool = new Football_Pool_Pool( FOOTBALLPOOL_DEFAULT_SEASON );
+$pool = footballpool();
 
 //$suffix = FOOTBALLPOOL_LOCAL_MODE ? '' : '.min';
 $suffix = '.min';
@@ -171,14 +171,7 @@ $suffix = '.min';
 	
 	<!-- fp-group -->
 	<div id="fp-group" class="shortcode-options-panel mce-container">
-		<div>
-			<label class="mce-label" for="group-id"><?php _e( 'Select a group', 'football-pool' ); ?></label>
-			<div>
-				<select class="mce-select" id="group-id">
-					<?php group_options(); ?>
-				</select>
-			</div>
-		</div>
+		<?php group_select( 'group' ); ?>
 	</div>
 
 	<!-- fp-predictionform -->
@@ -203,12 +196,7 @@ $suffix = '.min';
 			</label>
 			<br>
 			<select class="mce-select" id="matchtype-id" style="height:100px; display:none;" multiple="multiple">
-				<?php
-				$match_types = Football_Pool_Matches::get_match_types();
-				foreach( $match_types as $match_type ) {
-					printf( '<option value="%d">%s</option>', $match_type->id, $match_type->name );
-				}
-				?>
+				<?php echo matchtype_options(); ?>
 			</select>
 		</div>
 		<div>
@@ -255,12 +243,7 @@ $suffix = '.min';
 			</label>
 			<br>
 			<select class="mce-select" id="matches-matchtype-id" style="height:100px; display:none;" multiple="multiple">
-				<?php
-				$match_types = Football_Pool_Matches::get_match_types();
-				foreach( $match_types as $match_type ) {
-					printf( '<option value="%d">%s</option>', $match_type->id, $match_type->name );
-				}
-				?>
+				<?php echo matchtype_options(); ?>
 			</select>
 		</div>
 		<div>
@@ -270,24 +253,16 @@ $suffix = '.min';
 			<br>
 			<select class="mce-select" id="matches-group-id" style="display:none;">
 				<option value=""></option>
-				<?php group_options(); ?>
+				<?php print_group_options(); ?>
 			</select>
 		</div>
 	</div>
 
 	<!-- fp-next-matches -->
 	<div id="fp-next-matches" class="shortcode-options-panel mce-container">
-		<?php matchtype_select( 'next-matches' ); ?>
-		<div>
-			<label class="mce-label" for="next-matches-group-id"><?php _e( 'Select a group', 'football-pool' ); ?></label>
-			<div>
-				<select class="mce-select" id="next-matches-group-id">
-					<option value=""></option>
-					<?php group_options(); ?>
-				</select>
-			</div>
-		</div>
 		<?php
+		matchtype_select( 'next-matches' );
+		group_select( 'next-matches' );
 		date_now_postdate_custom_fieldset( 'next-matches' );
 		label_textbox( __( 'Number of matches', 'football-pool' ), 'next-matches-num', ['placeholder', 5] );
 		?>
@@ -295,17 +270,9 @@ $suffix = '.min';
 
 	<!-- fp-last-matches -->
 	<div id="fp-last-matches" class="shortcode-options-panel mce-container">
-		<?php matchtype_select( 'last-matches' ); ?>
-		<div>
-			<label class="mce-label" for="last-matches-group-id"><?php _e( 'Select a group', 'football-pool' ); ?></label>
-			<div>
-				<select class="mce-select" id="last-matches-group-id">
-					<option value=""></option>
-					<?php group_options(); ?>
-				</select>
-			</div>
-		</div>
 		<?php
+		matchtype_select( 'last-matches' );
+		group_select( 'last-matches' );
 		date_now_postdate_custom_fieldset( 'last-matches' );
 		label_textbox( __( 'Number of matches', 'football-pool' ), 'last-matches-num', ['placeholder', 5] );
 		?>
@@ -531,11 +498,15 @@ $suffix = '.min';
 		user_select_multiple( 'match-scores' );
 		match_select_multiple( 'match-scores' );
 		matchtype_select( 'match-scores' );
-		label_select( 'Display', 'match-scores-display', array(
-			'points' => __( 'Points scored', 'football-pool' ),
-			'predictions' => __( 'Predictions', 'football-pool' ),
-			'both' => __( 'Both', 'football-pool' ),
-		) );
+		label_select(
+			__( 'Display', 'football-pool' ),
+			'match-scores-display',
+			array(
+				'points' => __( 'Points scored', 'football-pool' ),
+				'predictions' => __( 'Predictions', 'football-pool' ),
+				'both' => __( 'Both', 'football-pool' ),
+			)
+		);
 		label_checkbox( __( 'Hide zeroes?', 'football-pool' ), 'match-scores-hide-zeroes' );
 		label_checkbox( __( 'Show total?', 'football-pool' ), 'match-scores-show-total' );
 		label_checkbox( __( 'Use querystring?', 'football-pool' ), 'match-scores-use-querystring' );
@@ -587,7 +558,7 @@ $suffix = '.min';
 	<!-- fp-money-in-the-pot -->
 	<div id="fp-money-in-the-pot" class="shortcode-options-panel mce-container">
 		<?php
-		league_select_with_default_and_user( 'money-in-the-pot', true );
+		league_select_with_default_and_user( 'money-in-the-pot', [ 'multiple' => 'multiple', 'style' => 'height:100px;' ] );
 		label_textbox( __( 'Amount', 'football-pool' ), 'money-in-the-pot-amount', array( 'placeholder' => 0 ) );
 		label_textbox( __( 'Format', 'football-pool' ), 'money-in-the-pot-format', array( 'label_link' => '//php.net/manual/en/function.sprintf.php' ) );
 		?>

@@ -3,7 +3,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -24,20 +24,20 @@
 /** @noinspection SqlResolve */
 
 class Football_Pool_Stadiums {
-	public function get_stadiums() {
+	public function get_stadiums(): array {
 		global $wpdb;
 		$prefix = FOOTBALLPOOL_DB_PREFIX;
 		$sql = "SELECT id, name, photo, comments FROM {$prefix}stadiums ORDER BY name ASC";
 		$rows = $wpdb->get_results( $sql, ARRAY_A );
 		
-		$stadiums = array();
+		$stadiums = [];
 		foreach ( $rows as $row ) {
 			$stadiums[] = new Football_Pool_Stadium($row);
 		}
 		return $stadiums;
 	}
 	
-	public function print_lines( $stadiums ) {
+	public function print_lines( $stadiums ): string {
 		$thumbs_in_listing = Football_Pool_Utils::get_fp_option( 'listing_show_venue_thumb', 1, 'int' ) === 1;
 		$comments_in_listing = Football_Pool_Utils::get_fp_option( 'listing_show_venue_comments', 1, 'int' ) === 1;
 		$output = '';
@@ -63,11 +63,9 @@ class Football_Pool_Stadiums {
 		$sql = $wpdb->prepare( "SELECT id, name, photo, comments FROM {$prefix}stadiums WHERE id = %d", $id );
 		$row = $wpdb->get_row( $sql, ARRAY_A );
 		
-		return ( $row ) ? new Football_Pool_Stadium( $row ) : null;
+		return ( $row ) ? new Football_Pool_Stadium( $row ) : 0;
 	}
 	
-	// returns object
-
 	/**
 	 * @param string $name
 	 * @param string $addnew
@@ -80,8 +78,10 @@ class Football_Pool_Stadiums {
 		global $wpdb;
 		$prefix = FOOTBALLPOOL_DB_PREFIX;
 		
-		$sql = $wpdb->prepare( "SELECT id, name, photo, comments
-								FROM {$prefix}stadiums WHERE name = %s", $name );
+		$sql = $wpdb->prepare(
+			"SELECT id, name, photo, comments FROM {$prefix}stadiums WHERE name = %s",
+			$name
+		);
 		$result = $wpdb->get_row( $sql );
 		
 		if ( $addnew == 'addnew' && $result == null ) {
@@ -93,19 +93,19 @@ class Football_Pool_Stadiums {
 			}
 			
 			$sql = $wpdb->prepare( 
-							"INSERT INTO {$prefix}stadiums ( name, photo, comments ) 
-							 VALUES ( %s, %s, %s )"
-							, $name, $photo, $comments
-					);
+				"INSERT INTO {$prefix}stadiums ( name, photo, comments ) 
+				 VALUES ( %s, %s, %s )",
+				$name, $photo, $comments
+			);
 			$wpdb->query( $sql );
 			$id = $wpdb->insert_id;
-			$result = (object) array( 
-									'id'       => $id, 
-									'name'     => $name,
-									'photo'    => $photo,
-									'comments'    => $comments,
-									'inserted' => true
-								);
+			$result = (object) array(
+				'id'       => $id,
+				'name'     => $name,
+				'photo'    => $photo,
+				'comments'    => $comments,
+				'inserted' => true
+			);
 		}
 		
 		return $result;

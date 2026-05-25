@@ -3,7 +3,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -28,38 +28,43 @@
 defined( 'ABSPATH' ) or die( 'Cannot access widgets directly.' );
 add_action( 'widgets_init', function() { register_widget( 'Football_Pool_Shoutbox_Widget' ); } );
 
-// dummy var for translation files
-$fp_translate_this = __( 'Shoutbox Widget', 'football-pool' );
-$fp_translate_this = __( 'a shoutbox for your players. Leave short messages.', 'football-pool' );
-$fp_translate_this = __( 'shoutbox', 'football-pool' );
-$fp_translate_this = __( 'Number of messages to display', 'football-pool' );
-
 class Football_Pool_Shoutbox_Widget extends Football_Pool_Widget {
-	protected $widget = array(
-		'name' => 'Shoutbox Widget',
-		'description' => 'a shoutbox for your players. Leave short messages.',
-		'do_wrapper' => true, 
-		
-		'fields' => array(
-			array(
-				'name' => 'Title',
-				'desc' => '',
-				'id' => 'title',
-				'type' => 'text',
-				'std' => 'shoutbox'
-			),
-			array(
-				'name' => 'Number of messages to display',
-				'desc' => '',
-				'id' => 'num_messages',
-				'type' => 'text',
-				'std' => '20'
-			),
-		)
-	);
-	
+	protected $widget = [];
+
+	public function __construct() {
+		$this->widget = array(
+			'name' => __( 'Shoutbox Widget', 'football-pool' ),
+			'description' => __( 'a shoutbox for your players. Leave short messages.', 'football-pool' ),
+			'do_wrapper' => true,
+
+			'fields' => array(
+				array(
+					'name' => __( 'Title', 'football-pool' ),
+					'desc' => '',
+					'id' => 'title',
+					'type' => 'text',
+					'std' => __( 'shoutbox', 'football-pool' )
+				),
+				array(
+					'name' => __( 'Number of messages to display', 'football-pool' ),
+					'desc' => '',
+					'id' => 'num_messages',
+					'type' => 'text',
+					'std' => '20'
+				),
+			)
+		);
+
+		$classname = str_replace( '_', '', get_class( $this ) );
+		parent::__construct(
+			$classname,
+			$this->widget['name'] ?? $classname,
+			$this->widget['description']
+		);
+	}
+
 	public function html( string $title, array $args, array $instance ) {
-		global $pool;
+		$pool = footballpool();
 		extract( $args );
 
 		if ( isset( $instance['num_messages'] ) && is_numeric( $instance['num_messages'] ) ) {
@@ -119,7 +124,7 @@ class Football_Pool_Shoutbox_Widget extends Football_Pool_Widget {
 			echo '<p></p>';
 		}
 
-		if ( $user_id > 0 ) {
+		if ( $user_id > 0 && Football_Pool_Utils::get_fp_option( 'shoutbox_hide_form', 0, 'int' ) === 0 ) {
 			echo '<form class="fp-form" action="" method="post">';
 			wp_nonce_field( FOOTBALLPOOL_NONCE_SHOUTBOX, FOOTBALLPOOL_NONCE_SHOUTBOX_INPUT_NAME );
 			echo '<p><span class="notice">';
@@ -131,10 +136,12 @@ class Football_Pool_Shoutbox_Widget extends Football_Pool_Widget {
 				onkeyup="FootballPool.update_chars( this.id, %d )" title="%s">%s</textarea>',
 				$id,
 				$max_chars,
-				sprintf( __( 'all text longer than %s characters will be removed!', 'football-pool' ),
-					$max_chars
+				esc_attr(
+					sprintf( __( 'all text longer than %s characters will be removed!', 'football-pool' ),
+						$max_chars
+					)
 				),
-				$unsaved_text
+				esc_textarea( $unsaved_text )
 			);
 			if ( $save_result === false ) {
 				echo '<span class="notice error">';
@@ -149,14 +156,5 @@ class Football_Pool_Shoutbox_Widget extends Football_Pool_Widget {
 			);
 			echo '</p></form>';
 		}
-	}
-	
-	public function __construct() {
-		$classname = str_replace( '_', '', get_class( $this ) );
-		parent::__construct(
-			$classname, 
-			$this->widget['name'] ?? $classname,
-			$this->widget['description']
-		);
 	}
 }

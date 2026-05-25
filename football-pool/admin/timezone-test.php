@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -26,7 +26,7 @@ require_once 'class-football-pool-admin.php';
 
 global $wpdb;
 $prefix = FOOTBALLPOOL_DB_PREFIX;
-$pool = new Football_Pool_Pool( FOOTBALLPOOL_DEFAULT_SEASON );
+$pool = footballpool();
 $matches = $pool->matches;
 $questions = $pool->get_bonus_questions();
 
@@ -35,8 +35,7 @@ $match = Football_Pool_Utils::get_int( 'match' );
 $question = Football_Pool_Utils::get_int( 'question' );
 
 function bonusquestion_options() {
-	global $pool;
-	$questions = $pool->get_bonus_questions();
+	$questions = footballpool()->get_bonus_questions();
 	foreach( $questions as $question ) {
 		printf( '<option value="%d">%d: %s</option>', $question['id'], $question['id'], $question['question'] );
 	}

@@ -1,0 +1,110 @@
+/*
+ Contributor: @jmandrille
+ Translator: ChatGPT
+ Assets URI: https://www.dropbox.com/scl/fi/fyr51as7s6rc2kilp4pvo/2026-world-cup-assets.zip?rlkey=es7asqtdphrxjzl99e500khs3&dl=1
+*/
+play_date,home_team,away_team,stadium,match_type,home_team_photo,home_team_flag,home_team_link,home_team_group,home_team_group_order,home_team_is_real,away_team_photo,away_team_flag,away_team_link,away_team_group,away_team_group_order,away_team_is_real,stadium_photo
+2026-06-11 19:00:00,Mexico,South Africa,Estadio Azteca,Group Stage,mexico.jpg,mx.png,,Group A,1,1,south-africa.jpg,za.png,,Group A,2,1,estadio-azteca.jpg
+2026-06-12 02:00:00,South Korea,Czechia,Estadio Akron,Group Stage,south-korea.jpg,kr.png,,Group A,3,1,czechia.jpg,cz.png,,Group A,4,1,estadio-akron.jpg
+2026-06-12 19:00:00,Canada,Bosnia-Herzegovina,BMO Field,Group Stage,canada.jpg,ca.png,,Group B,1,1,bosnia-herzegovina.jpg,ba.png,,Group B,2,1,bmo-field.jpg
+2026-06-13 01:00:00,United States,Paraguay,SoFi Stadium,Group Stage,united-states.jpg,us.png,,Group D,1,1,paraguay.jpg,py.png,,Group D,2,1,sofi-stadium.jpg
+2026-06-13 19:00:00,Qatar,Switzerland,Levi's Stadium,Group Stage,qatar.jpg,qa.png,,Group B,3,1,switzerland.jpg,ch.png,,Group B,4,1,levis-stadium.jpg
+2026-06-13 22:00:00,Brazil,Morocco,MetLife Stadium,Group Stage,brazil.jpg,br.png,,Group C,3,1,morocco.jpg,ma.png,,Group C,4,1,metlife-stadium.jpg
+2026-06-14 01:00:00,Haiti,Scotland,Gillette Stadium,Group Stage,haiti.jpg,ht.png,,Group C,1,1,scotland.jpg,sa.png,,Group C,2,1,gillette-stadium.jpg
+2026-06-14 04:00:00,Australia,Türkiye,BC Place,Group Stage,australia.jpg,au.png,,Group D,3,1,turkiye.jpg,tr.png,,Group D,4,1,bc-place.jpg
+2026-06-14 17:00:00,Germany,Curazao,NRG Stadium,Group Stage,germany.jpg,de.png,,Group E,3,1,curacao.jpg,cu.png,,Group E,4,1,nrg-stadium.jpg
+2026-06-14 20:00:00,Netherlands,Japan,AT&T Stadium,Group Stage,netherlands.jpg,nl.png,,Group F,1,1,japan.jpg,jp.png,,Group F,2,1,at-and-t-stadium.jpg
+2026-06-14 23:00:00,Ivory Coast,Ecuador,Lincoln Financial Field,Group Stage,ivory-coast.jpg,cr.png,,Group E,1,1,ecuador.jpg,ec.png,,Group E,2,1,lincoln-financial-field.jpg
+2026-06-15 02:00:00,Sweden,Tunisia,Estadio BBVA,Group Stage,sweden.jpg,se.png,,Group F,3,1,tunisia.jpg,tn.png,,Group F,4,1,estadio-bbva.jpg
+2026-06-15 16:00:00,Spain,Cape Verde,Mercedes-Benz Stadium,Group Stage,spain.jpg,es.png,,Group H,3,1,cape-verde.jpg,cv.png,,Group H,4,1,mercedes-benz-stadium.jpg
+2026-06-15 19:00:00,Belgium,Egipto,Lumen Field,Group Stage,belgium.jpg,be.png,,Group G,3,1,egypt.jpg,eg.png,,Group G,4,1,lumen-field.jpg
+2026-06-15 22:00:00,Saudi Arabia,Uruguay,Hard Rock Stadium,Group Stage,saudi-arabia.jpg,sa.png,,Group H,1,1,uruguay.jpg,uy.png,,Group H,2,1,hard-rock-stadium.jpg
+2026-06-16 01:00:00,Iran,New Zealand,SoFi Stadium,Group Stage,iran.jpg,ir.png,,Group G,1,1,new-zealand.jpg,nz.png,,Group G,2,1,sofi-stadium.jpg
+2026-06-16 19:00:00,France,Senegal,MetLife Stadium,Group Stage,france.jpg,fr.png,,Group I,1,1,senegal.jpg,sn.png,,Group I,2,1,metlife-stadium.jpg
+2026-06-16 22:00:00,Iraq,Norway,Gillette Stadium,Group Stage,iraq.jpg,iq.png,,Group I,3,1,norway.jpg,no.png,,Group I,4,1,gillette-stadium.jpg
+2026-06-17 01:00:00,Argentina,Algeria,Arrowhead Stadium,Group Stage,argentina.jpg,ar.png,,Group J,1,1,algeria.jpg,dz.png,,Group J,2,1,arrowhead-stadium.jpg
+2026-06-17 04:00:00,Austria,Jordan,Levi's Stadium,Group Stage,austria.jpg,at.png,,Group J,3,1,jordan.jpg,jo.png,,Group J,4,1,levis-stadium.jpg
+2026-06-17 17:00:00,Portugal,Congo DR,NRG Stadium,Group Stage,portugal.jpg,pt.png,,Group K,1,1,congo-dr.jpg,cd.png,,Group K,2,1,nrg-stadium.jpg
+2026-06-17 20:00:00,England,Croatia,AT&T Stadium,Group Stage,england.jpg,gb.png,,Group L,3,1,croatia.jpg,hr.png,,Group L,4,1,at-and-t-stadium.jpg
+2026-06-17 23:00:00,Ghana,Panama,BMO Field,Group Stage,ghana.jpg,gh.png,,Group L,1,1,panama.jpg,pa.png,,Group L,2,1,bmo-field.jpg
+2026-06-18 02:00:00,Uzbekistan,Colombia,Estadio Azteca,Group Stage,uzbekistan.jpg,uz.png,,Group K,3,1,colombia.jpg,co.png,,Group K,4,1,estadio-azteca.jpg
+2026-06-18 16:00:00,Czechia,South Africa,Mercedes-Benz Stadium,Group Stage,czechia.jpg,cz.png,,Group A,4,1,south-africa.jpg,za.png,,Group A,2,1,mercedes-benz-stadium.jpg
+2026-06-18 19:00:00,Switzerland,Bosnia-Herzegovina,SoFi Stadium,Group Stage,switzerland.jpg,ch.png,,Group B,4,1,bosnia-herzegovina.jpg,ba.png,,Group B,2,1,sofi-stadium.jpg
+2026-06-18 22:00:00,Canada,Qatar,BC Place,Group Stage,canada.jpg,ca.png,,Group B,1,1,qatar.jpg,qa.png,,Group B,3,1,bc-place.jpg
+2026-06-19 01:00:00,Mexico,South Korea,Estadio Akron,Group Stage,mexico.jpg,mx.png,,Group A,1,1,south-korea.jpg,kr.png,,Group A,3,1,estadio-akron.jpg
+2026-06-19 19:00:00,United States,Australia,Lumen Field,Group Stage,united-states.jpg,us.png,,Group D,1,1,australia.jpg,au.png,,Group D,3,1,lumen-field.jpg
+2026-06-19 22:00:00,Scotland,Morocco,Gillette Stadium,Group Stage,scotland.jpg,sa.png,,Group C,2,1,morocco.jpg,ma.png,,Group C,4,1,gillette-stadium.jpg
+2026-06-20 01:00:00,Brazil,Haiti,Lincoln Financial Field,Group Stage,brazil.jpg,br.png,,Group C,3,1,haiti.jpg,ht.png,,Group C,1,1,lincoln-financial-field.jpg
+2026-06-20 04:00:00,Türkiye,Paraguay,Levi's Stadium,Group Stage,turkiye.jpg,tr.png,,Group D,4,1,paraguay.jpg,py.png,,Group D,2,1,levis-stadium.jpg
+2026-06-20 17:00:00,Netherlands,Sweden,NRG Stadium,Group Stage,netherlands.jpg,nl.png,,Group F,1,1,sweden.jpg,se.png,,Group F,3,1,nrg-stadium.jpg
+2026-06-20 20:00:00,Germany,Ivory Coast,BMO Field,Group Stage,germany.jpg,de.png,,Group E,3,1,ivory-coast.jpg,cr.png,,Group E,1,1,bmo-field.jpg
+2026-06-21 00:00:00,Ecuador,Curazao,Arrowhead Stadium,Group Stage,ecuador.jpg,ec.png,,Group E,2,1,curacao.jpg,cu.png,,Group E,4,1,arrowhead-stadium.jpg
+2026-06-21 04:00:00,Tunisia,Japan,Estadio BBVA,Group Stage,tunisia.jpg,tn.png,,Group F,4,1,japan.jpg,jp.png,,Group F,2,1,estadio-bbva.jpg
+2026-06-21 16:00:00,Spain,Saudi Arabia,Mercedes-Benz Stadium,Group Stage,spain.jpg,es.png,,Group H,3,1,saudi-arabia.jpg,sa.png,,Group H,1,1,mercedes-benz-stadium.jpg
+2026-06-21 19:00:00,Belgium,Iran,SoFi Stadium,Group Stage,belgium.jpg,be.png,,Group G,3,1,iran.jpg,ir.png,,Group G,1,1,sofi-stadium.jpg
+2026-06-21 22:00:00,Uruguay,Cape Verde,Hard Rock Stadium,Group Stage,uruguay.jpg,uy.png,,Group H,2,1,cape-verde.jpg,cv.png,,Group H,4,1,hard-rock-stadium.jpg
+2026-06-22 01:00:00,New Zealand,Egipto,BC Place,Group Stage,new-zealand.jpg,nz.png,,Group G,2,1,egypt.jpg,eg.png,,Group G,4,1,bc-place.jpg
+2026-06-22 17:00:00,Argentina,Austria,AT&T Stadium,Group Stage,argentina.jpg,ar.png,,Group J,1,1,austria.jpg,at.png,,Group J,3,1,at-and-t-stadium.jpg
+2026-06-22 21:00:00,France,Iraq,Lincoln Financial Field,Group Stage,france.jpg,fr.png,,Group I,1,1,iraq.jpg,iq.png,,Group I,3,1,lincoln-financial-field.jpg
+2026-06-23 00:00:00,Norway,Senegal,MetLife Stadium,Group Stage,norway.jpg,no.png,,Group I,4,1,senegal.jpg,sn.png,,Group I,2,1,metlife-stadium.jpg
+2026-06-23 03:00:00,Jordan,Algeria,Levi's Stadium,Group Stage,jordan.jpg,jo.png,,Group J,4,1,algeria.jpg,dz.png,,Group J,2,1,levis-stadium.jpg
+2026-06-23 17:00:00,Portugal,Uzbekistan,NRG Stadium,Group Stage,portugal.jpg,pt.png,,Group K,1,1,uzbekistan.jpg,uz.png,,Group K,3,1,nrg-stadium.jpg
+2026-06-23 20:00:00,England,Ghana,Gillette Stadium,Group Stage,england.jpg,gb.png,,Group L,3,1,ghana.jpg,gh.png,,Group L,1,1,gillette-stadium.jpg
+2026-06-23 23:00:00,Panama,Croatia,BMO Field,Group Stage,panama.jpg,pa.png,,Group L,2,1,croatia.jpg,hr.png,,Group L,4,1,bmo-field.jpg
+2026-06-24 02:00:00,Colombia,Congo DR,Estadio Akron,Group Stage,colombia.jpg,co.png,,Group K,4,1,congo-dr.jpg,cd.png,,Group K,2,1,estadio-akron.jpg
+2026-06-24 19:00:00,Switzerland,Canada,BC Place,Group Stage,switzerland.jpg,ch.png,,Group B,4,1,canada.jpg,ca.png,,Group B,1,1,bc-place.jpg
+2026-06-24 19:00:00,Bosnia-Herzegovina,Qatar,Lumen Field,Group Stage,bosnia-herzegovina.jpg,ba.png,,Group B,2,1,qatar.jpg,qa.png,,Group B,3,1,lumen-field.jpg
+2026-06-24 22:00:00,Scotland,Brazil,Hard Rock Stadium,Group Stage,scotland.jpg,sa.png,,Group C,2,1,brazil.jpg,br.png,,Group C,3,1,hard-rock-stadium.jpg
+2026-06-24 22:00:00,Morocco,Haiti,Mercedes-Benz Stadium,Group Stage,morocco.jpg,ma.png,,Group C,4,1,haiti.jpg,ht.png,,Group C,1,1,mercedes-benz-stadium.jpg
+2026-06-25 01:00:00,South Africa,South Korea,Estadio BBVA,Group Stage,south-africa.jpg,za.png,,Group A,2,1,south-korea.jpg,kr.png,,Group A,3,1,estadio-bbva.jpg
+2026-06-25 01:00:00,Czechia,Mexico,Estadio Azteca,Group Stage,czechia.jpg,cz.png,,Group A,4,1,mexico.jpg,mx.png,,Group A,1,1,estadio-azteca.jpg
+2026-06-25 20:00:00,Curazao,Ivory Coast,Lincoln Financial Field,Group Stage,curacao.jpg,cu.png,,Group E,4,1,ivory-coast.jpg,cr.png,,Group E,1,1,lincoln-financial-field.jpg
+2026-06-25 20:00:00,Ecuador,Germany,MetLife Stadium,Group Stage,ecuador.jpg,ec.png,,Group E,2,1,germany.jpg,de.png,,Group E,3,1,metlife-stadium.jpg
+2026-06-25 23:00:00,Japan,Sweden,AT&T Stadium,Group Stage,japan.jpg,jp.png,,Group F,2,1,sweden.jpg,se.png,,Group F,3,1,at-and-t-stadium.jpg
+2026-06-25 23:00:00,Tunisia,Netherlands,Arrowhead Stadium,Group Stage,tunisia.jpg,tn.png,,Group F,4,1,netherlands.jpg,nl.png,,Group F,1,1,arrowhead-stadium.jpg
+2026-06-26 02:00:00,Türkiye,United States,SoFi Stadium,Group Stage,turkiye.jpg,tr.png,,Group D,4,1,united-states.jpg,us.png,,Group D,1,1,sofi-stadium.jpg
+2026-06-26 02:00:00,Paraguay,Australia,Levi's Stadium,Group Stage,paraguay.jpg,py.png,,Group D,2,1,australia.jpg,au.png,,Group D,3,1,levis-stadium.jpg
+2026-06-26 19:00:00,Norway,France,Gillette Stadium,Group Stage,norway.jpg,no.png,,Group I,4,1,france.jpg,fr.png,,Group I,1,1,gillette-stadium.jpg
+2026-06-26 19:00:00,Senegal,Iraq,BMO Field,Group Stage,senegal.jpg,sn.png,,Group I,2,1,iraq.jpg,iq.png,,Group I,3,1,bmo-field.jpg
+2026-06-27 00:00:00,Cape Verde,Saudi Arabia,NRG Stadium,Group Stage,cape-verde.jpg,cv.png,,Group H,4,1,saudi-arabia.jpg,sa.png,,Group H,1,1,nrg-stadium.jpg
+2026-06-27 00:00:00,Uruguay,Spain,Estadio Akron,Group Stage,uruguay.jpg,uy.png,,Group H,2,1,spain.jpg,es.png,,Group H,3,1,estadio-akron.jpg
+2026-06-27 03:00:00,Egipto,Iran,Lumen Field,Group Stage,egypt.jpg,eg.png,,Group G,4,1,iran.jpg,ir.png,,Group G,1,1,lumen-field.jpg
+2026-06-27 03:00:00,New Zealand,Belgium,BC Place,Group Stage,new-zealand.jpg,nz.png,,Group G,2,1,belgium.jpg,be.png,,Group G,3,1,bc-place.jpg
+2026-06-27 21:00:00,Croatia,Ghana,Lincoln Financial Field,Group Stage,croatia.jpg,hr.png,,Group L,4,1,ghana.jpg,gh.png,,Group L,1,1,lincoln-financial-field.jpg
+2026-06-27 21:00:00,Panama,England,MetLife Stadium,Group Stage,panama.jpg,pa.png,,Group L,2,1,england.jpg,gb.png,,Group L,3,1,metlife-stadium.jpg
+2026-06-27 23:30:00,Colombia,Portugal,Hard Rock Stadium,Group Stage,colombia.jpg,co.png,,Group K,4,1,portugal.jpg,pt.png,,Group K,1,1,hard-rock-stadium.jpg
+2026-06-27 23:30:00,Congo DR,Uzbekistan,Mercedes-Benz Stadium,Group Stage,congo-dr.jpg,cd.png,,Group K,2,1,uzbekistan.jpg,uz.png,,Group K,3,1,mercedes-benz-stadium.jpg
+2026-06-28 02:00:00,Jordan,Argentina,AT&T Stadium,Group Stage,jordan.jpg,jo.png,,Group J,4,1,argentina.jpg,ar.png,,Group J,1,1,at-and-t-stadium.jpg
+2026-06-28 02:00:00,Algeria,Austria,Arrowhead Stadium,Group Stage,algeria.jpg,dz.png,,Group J,2,1,austria.jpg,at.png,,Group J,3,1,arrowhead-stadium.jpg
+2026-06-28 19:00:00,Second Group A,Second Group B,SoFi Stadium,Round of 32,,,,,0,0,,,,,0,0,sofi-stadium.jpg
+2026-06-29 17:00:00,First Group C,Second Group F,NRG Stadium,Round of 32,,,,,0,0,,,,,0,0,nrg-stadium.jpg
+2026-06-29 20:30:00,First Group E,Third Group A/B/C/D/F,Gillette Stadium,Round of 32,,,,,0,0,,,,,0,0,gillette-stadium.jpg
+2026-06-30 01:00:00,First Group F,Second Group C,Estadio BBVA,Round of 32,,,,,0,0,,,,,0,0,estadio-bbva.jpg
+2026-06-30 17:00:00,Second Group E,Second Group I,AT&T Stadium,Round of 32,,,,,0,0,,,,,0,0,at-and-t-stadium.jpg
+2026-06-30 21:00:00,First Group I,Third Group C/D/F/G/H,MetLife Stadium,Round of 32,,,,,0,0,,,,,0,0,metlife-stadium.jpg
+2026-07-01 01:00:00,First Group A,Third Group C/E/F/H/I,Estadio Azteca,Round of 32,,,,,0,0,,,,,0,0,estadio-azteca.jpg
+2026-07-01 16:00:00,First Group L,Third Group E/H/I/J/K,Mercedes-Benz Stadium,Round of 32,,,,,0,0,,,,,0,0,mercedes-benz-stadium.jpg
+2026-07-01 20:00:00,First Group G,Third Group A/E/H/I/J,Lumen Field,Round of 32,,,,,0,0,,,,,0,0,lumen-field.jpg
+2026-07-02 00:00:00,First Group D,Third Group B/E/F/I/J,Levi's Stadium,Round of 32,,,,,0,0,,,,,0,0,levis-stadium.jpg
+2026-07-02 19:00:00,First Group H,Second Group J,SoFi Stadium,Round of 32,,,,,0,0,,,,,0,0,sofi-stadium.jpg
+2026-07-02 23:00:00,Second Group K,Second Group L,BMO Field,Round of 32,,,,,0,0,,,,,0,0,bmo-field.jpg
+2026-07-03 03:00:00,First Group B,Third Group E/F/G/I/J,BC Place,Round of 32,,,,,0,0,,,,,0,0,bc-place.jpg
+2026-07-03 18:00:00,Second Group D,Second Group G,AT&T Stadium,Round of 32,,,,,0,0,,,,,0,0,at-and-t-stadium.jpg
+2026-07-03 22:00:00,First Group J,Second Group H,Hard Rock Stadium,Round of 32,,,,,0,0,,,,,0,0,hard-rock-stadium.jpg
+2026-07-04 01:30:00,First Group K,Third Group D/E/I/J/L,Arrowhead Stadium,Round of 32,,,,,0,0,,,,,0,0,arrowhead-stadium.jpg
+2026-07-04 17:00:00,Winner Match 73,Winner Match 75,NRG Stadium,Round of 16,,,,,0,0,,,,,0,0,nrg-stadium.jpg
+2026-07-04 21:00:00,Winner Match 74,Winner Match 77,Lincoln Financial Field,Round of 16,,,,,0,0,,,,,0,0,lincoln-financial-field.jpg
+2026-07-05 20:00:00,Winner Match 76,Winner Match 78,MetLife Stadium,Round of 16,,,,,0,0,,,,,0,0,metlife-stadium.jpg
+2026-07-06 00:00:00,Winner Match 79,Winner Match 80,Estadio Azteca,Round of 16,,,,,0,0,,,,,0,0,estadio-azteca.jpg
+2026-07-07 00:00:00,Winner Match 81,Winner Match 82,Lumen Field,Round of 16,,,,,0,0,,,,,0,0,lumen-field.jpg
+2026-07-06 19:00:00,Winner Match 83,Winner Match 84,AT&T Stadium,Round of 16,,,,,0,0,,,,,0,0,at-and-t-stadium.jpg
+2026-07-07 16:00:00,Winner Match 86,Winner Match 88,Mercedes-Benz Stadium,Round of 16,,,,,0,0,,,,,0,0,mercedes-benz-stadium.jpg
+2026-07-07 20:00:00,Winner Match 85,Winner Match 87,BC Place,Round of 16,,,,,0,0,,,,,0,0,bc-place.jpg
+2026-07-09 20:00:00,Winner Match 89,Winner Match 90,Gillette Stadium,Quarter-finals,,,,,0,0,,,,,0,0,gillette-stadium.jpg
+2026-07-10 19:00:00,Winner Match 93,Winner Match 94,SoFi Stadium,Quarter-finals,,,,,0,0,,,,,0,0,sofi-stadium.jpg
+2026-07-11 21:00:00,Winner Match 91,Winner Match 92,Hard Rock Stadium,Quarter-finals,,,,,0,0,,,,,0,0,hard-rock-stadium.jpg
+2026-07-12 01:00:00,Winner Match 95,Winner Match 96,Arrowhead Stadium,Quarter-finals,,,,,0,0,,,,,0,0,arrowhead-stadium.jpg
+2026-07-14 19:00:00,Winner Match 97,Winner Match 98,AT&T Stadium,Semi-final,,,,,0,0,,,,,0,0,at-and-t-stadium.jpg
+2026-07-15 19:00:00,Winner Match 99,Winner Match 100,Mercedes-Benz Stadium,Semi-final,,,,,0,0,,,,,0,0,mercedes-benz-stadium.jpg
+2026-07-18 21:00:00,Loser Match 101,Loser Match 102,Hard Rock Stadium,Third Place,,,,,0,0,,,,,0,0,hard-rock-stadium.jpg
+2026-07-19 19:00:00,Winner Match 101,Winner Match 102,MetLife Stadium,Final,,,,,0,0,,,,,0,0,metlife-stadium.jpg

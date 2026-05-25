@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -25,15 +25,14 @@ class Football_Pool_Chart_Data {
 	/************************************************
 	 All the functions to get the data for the charts
 	*************************************************/
-	private $scorehistory;
+	private string $scorehistory;
 
 	public function __construct() {
 		$this->scorehistory = $this->get_score_table();
 	}
 	
-	private function get_score_table() {
-		global $pool;
-		return $pool->get_score_table();
+	private function get_score_table(): string {
+		return footballpool()->get_score_table();
 	}
 	
 	public function predictions_pie_chart_data( $match, $ranking_id = FOOTBALLPOOL_RANKING_DEFAULT ) {
@@ -65,8 +64,9 @@ class Football_Pool_Chart_Data {
 		$data = [];
 		
 		if ( count( $users ) > 0 ) {
-			global $wpdb, $pool;
+			global $wpdb;
 			$prefix = FOOTBALLPOOL_DB_PREFIX;
+			$pool = footballpool();
 			
 			$user_ids = implode( ',', $users );
 			
@@ -87,7 +87,7 @@ class Football_Pool_Chart_Data {
 			$rows = $wpdb->get_results( $sql, ARRAY_A );
 			if ( count( $rows ) > 0 ) {
 				foreach ( $rows as $row ) {
-					$user_name = $pool->user_name( $row['user_id'] );
+					$user_name = $pool->user_name( (int) $row['user_id'] );
 					$data[ $row['user_id'] ] = array(
 												'user_name' => $user_name,
 												'data' => array(
@@ -108,7 +108,7 @@ class Football_Pool_Chart_Data {
 	
 	public function bonus_question_for_users_pie_chart_data( $users = [],
 	                                                         $ranking_id = FOOTBALLPOOL_RANKING_DEFAULT ) {
-		global $pool;
+		$pool = footballpool();
 		$data = [];
 		if ( count( $users ) > 0 ) {
 			$questions = $pool->get_bonus_questions();
@@ -130,7 +130,7 @@ class Football_Pool_Chart_Data {
 			
 			$rows = $wpdb->get_results( $wpdb->prepare( $sql, FOOTBALLPOOL_TYPE_QUESTION ), ARRAY_A );
 			foreach ( $rows as $row ) {
-				$user_name = $pool->user_name( $row['user_id'] );
+				$user_name = $pool->user_name( (int) $row['user_id'] );
 				$data[ $user_name ] = array(
 										'user_name' => $user_name,
 										'data' => array(
@@ -146,8 +146,9 @@ class Football_Pool_Chart_Data {
 	}
 
 	public function bonus_question_pie_chart_data( $question ) {
-		global $wpdb, $pool;
+		global $wpdb;
 		$prefix = FOOTBALLPOOL_DB_PREFIX;
+		$pool = footballpool();
 		$sql = "SELECT 
 					COUNT( IF( ua.correct > 0, 1, NULL ) ) AS bonuscorrect, 
 					COUNT( IF( ua.correct = 0, 1, NULL ) ) AS bonuswrong,
@@ -178,8 +179,9 @@ class Football_Pool_Chart_Data {
 	}
 	
 	public function points_total_pie_chart_data( $user, $ranking_id = FOOTBALLPOOL_RANKING_DEFAULT ) {
-		global $wpdb, $pool;
+		global $wpdb;
 		$prefix = FOOTBALLPOOL_DB_PREFIX;
+		$pool = footballpool();
 
 		$output = [];
 
@@ -280,8 +282,9 @@ class Football_Pool_Chart_Data {
 												$ranking_id = FOOTBALLPOOL_RANKING_DEFAULT ) {
 		$data = [];
 		if ( count( $users ) > 0 ) {
-			global $wpdb, $pool;
+			global $wpdb;
 			$prefix = FOOTBALLPOOL_DB_PREFIX;
+			$pool = footballpool();
 			
 			$user_ids = implode( ',', $users );
 			$sql = $wpdb->prepare(
@@ -299,7 +302,7 @@ class Football_Pool_Chart_Data {
 								'match'     => $row['source_id'],
 								'type'      => $row['type'],
 								'value'     => $row[$history_data_to_plot],
-								'user_name' => $pool->user_name( $row['user_id'] ),
+								'user_name' => $pool->user_name( (int) $row['user_id'] ),
 								'user_id'   => $row['user_id'],
 							);
 			}
@@ -416,7 +419,7 @@ class Football_Pool_Chart_Data {
 	}
 	
 	private function per_match_line_series( $lines ) {
-		global $pool;
+		$pool = footballpool();
 
 		$output = [
 			'categories' => [],

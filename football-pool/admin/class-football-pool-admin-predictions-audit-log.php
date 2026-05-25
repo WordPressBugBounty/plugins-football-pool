@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2025 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -71,8 +71,9 @@ class Football_Pool_Admin_Predictions_Audit_Log extends Football_Pool_Admin {
 	}
 
 	private static function view() {
-		global $wpdb, $pool;
+		global $wpdb;
 		$prefix = FOOTBALLPOOL_DB_PREFIX;
+		$pool = footballpool();
 
 		// Search in username or logs
 		$search = Football_Pool_Utils::request_str( 's' );
@@ -88,7 +89,7 @@ class Football_Pool_Admin_Predictions_Audit_Log extends Football_Pool_Admin {
 		$options = [];
 		$options[0] = __( 'all users', 'football-pool' );
 		foreach ( $users as $user ) {
-			$options[$user['user_id']] = "{$user['user_name']} (id: {$user['user_id']})";
+			$options[$user['user_id']] = "{$user['user_name']} (ID: {$user['user_id']})";
 		}
 
 		// User search
@@ -134,7 +135,7 @@ class Football_Pool_Admin_Predictions_Audit_Log extends Football_Pool_Admin {
                 result_code AS `result`,
                 log_value AS `log`
 			 FROM {$prefix}predictions_audit_log 
-             WHERE ( user_id = %d OR 0 = %d ) AND ( %s = '' OR log_value LIKE %s )
+             WHERE ( 0 = %d OR user_id = %d ) AND ( %s = '' OR log_value LIKE %s )
              ORDER BY log_date DESC
              LIMIT {$offset}, {$page_size}",
 			$user_id, $user_id, $search, '%' . $wpdb->esc_like( $search ) . '%'
@@ -157,13 +158,14 @@ class Football_Pool_Admin_Predictions_Audit_Log extends Football_Pool_Admin {
 			}
 			echo '</tr></thead><tbody>';
 			foreach( $rows as $row ) {
-				$user = $pool->user_name( $row['user'] );
+				$user_id = (int) $row['user'];
+				$user_name = $pool->user_name( $user_id );
 				$log = nl2br( Football_Pool_Utils::xssafe( $row['log'], FOOTBALLPOOL_ENCODING, false ) );
 				$log_date = Football_Pool_Utils::date_from_gmt( $row['log date'], 'Y-m-d H:i:s' );
 
 				echo '<tr>';
 				echo "<td>{$log_date}</td>";
-				echo "<td>{$user}</td>";
+				echo "<td>{$user_name} (ID: {$user_id})</td>";
 				echo "<td>{$types[$row['type']]}</td>";
 				echo "<td>{$row['ID']}</td>";
 				echo "<td>{$results[$row['result']]}</td>";

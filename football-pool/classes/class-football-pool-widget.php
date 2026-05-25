@@ -3,7 +3,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2025 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -146,8 +146,9 @@ abstract class Football_Pool_Widget extends WP_Widget {
 		$this->widget['number'] = $this->number;
 
 		if ( isset( $instance['title'] ) ) {
-			$title = apply_filters( 'widget_title',
-				__( $instance['title'], 'football-pool' ), $instance, $this->id_base );
+			$title = apply_filters(
+				'widget_title', $instance['title'], $instance, $this->id_base
+			);
 		} else {
 			$title = '';
 		}
@@ -195,9 +196,11 @@ abstract class Football_Pool_Widget extends WP_Widget {
 		if ( empty( $this->widget['fields'] ) ) return false;
 		
 		// translate the default title
-		if ( $this->widget['fields'][0]['name'] === 'Title' )
-			$this->widget['fields'][0]['std'] = __( $this->widget['fields'][0]['std'], 'football-pool' );
-		
+//		$field0_name = $this->widget['fields'][0]['name'];
+//		if ( $field0_name === 'Title' || $field0_name === __( 'Title', 'football-pool' ) ) {
+//			$this->widget['fields'][0]['std'] =
+//				__( $this->widget['fields'][0]['std'], 'football-pool' );
+//		}
 		$defaults = array(
 			'id' => '',
 			'name' => '',
@@ -220,7 +223,11 @@ abstract class Football_Pool_Widget extends WP_Widget {
 			if ( $field['type'] != 'custom' && $field['type'] != 'metabox' ) {
 				echo '<p><label for="', $this->get_field_id(  $field['id'] ), '">';
 			}
-			if ( isset( $field['name'] ) && $field['name'] ) echo __( $field['name'], 'football-pool' ), ': ';
+			if ( isset( $field['name'] ) && $field['name'] ) {
+//				$title = __( 'Title', 'football-pool' ); // only here for the translation file
+//				$title = __( $field['name'], 'football-pool' );
+				echo $field['name'], ': ';
+			}
 			if ( $field['type'] != 'checkbox' ) echo '<br>';
 			
 			switch ( $field['type'] ) {
@@ -280,7 +287,7 @@ abstract class Football_Pool_Widget extends WP_Widget {
 	 * @param array $old_instance
 	 * @return array
 	 */
-	public function update( $new_instance, $old_instance ) {
+	public function update( $new_instance, $old_instance ): array {
 		// processes widget options to be saved
 		$new_instance = array_map( 'strip_tags', $new_instance );
 

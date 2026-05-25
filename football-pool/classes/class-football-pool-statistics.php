@@ -3,7 +3,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -51,8 +51,9 @@ class Football_Pool_Statistics {
 	
 	private function check_data( $match = 0 ): bool
 	{
-		global $wpdb, $pool;
+		global $wpdb;
 		$prefix = FOOTBALLPOOL_DB_PREFIX;
+		$pool = footballpool();
 		$scorehistory = $pool->get_score_table();
 		
 		$ranking_id = FOOTBALLPOOL_RANKING_DEFAULT;
@@ -85,9 +86,8 @@ class Football_Pool_Statistics {
 	 */
 	public function show_user_info( $user ): string
 	{
-		global $pool;
 		if ( $user ) {
-			$output = sprintf( '<h1 class="user-%d">%s</h1>', $user->ID, $pool->user_name( $user->ID ) );
+			$output = sprintf( '<h1 class="user-%d">%s</h1>', $user->ID, footballpool()->user_name( $user->ID ) );
 			$this->stats_visible = true;
 		} else {
 			$output = sprintf( '<p>%s</p>', __( 'User unknown.', 'football-pool' ) );
@@ -137,7 +137,7 @@ class Football_Pool_Statistics {
 	
 	public function show_bonus_question_info( $question ): string
 	{
-		global $pool;
+		$pool = footballpool();
 		$output = '';
 		$info = $pool->get_bonus_question_info( $question );
 		if ( $info ) {
@@ -172,7 +172,7 @@ class Football_Pool_Statistics {
 	}
 	
 	public function show_answers_for_bonus_question( $id ) {
-		global $pool;
+		$pool = footballpool();
 		$info = $pool->get_bonus_question_info( $id );
 
 		// todo: Only show when score date is in the past? Post by fimo66 on the forum.
@@ -261,8 +261,9 @@ class Football_Pool_Statistics {
 	}
 	
 	public function show_predictions_for_match( $match_info ) {
-		global $wpdb, $pool;
+		global $wpdb;
 		$prefix = FOOTBALLPOOL_DB_PREFIX;
+		$pool = footballpool();
 		
 		$sql = "SELECT
 					m.home_team_id, m.away_team_id, 
@@ -345,7 +346,7 @@ class Football_Pool_Statistics {
 
 				// Set the params for this row
 				$row_params = [];
-				$row_params['user_name'] = $pool->user_name( $row['user_id'] );
+				$row_params['user_name'] = $pool->user_name( (int) $row['user_id'] );
 				$row_params['user_url'] = esc_url( add_query_arg( array( 'user' => $row['user_id'] ), $userpage ) );
 				$row_params['current_user_css_class'] = ( (int) $row['user_id'] === $current_user_id ? 'currentuser' : '' );
 				$row_params['home_score'] = $row['home_score'];

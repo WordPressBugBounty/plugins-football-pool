@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -21,8 +21,6 @@
  */
 
 class Football_Pool_Admin_Games extends Football_Pool_Admin {
-	public function __construct() {}
-	
 	public static function help() {
 		$help_tabs = array(
 					array(
@@ -34,11 +32,6 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 						'id' => 'import',
 						'title' => __( 'Import & Export', 'football-pool' ),
 						'content' => __( '<p>Matches can be imported into the plugin using the import function (<em>\'Bulk change game schedule\'</em>). See the help page for more information about the required format.</p><p>On the import screen you can choose one of the already uploaded schedules or upload a new one (if write is enabled on the upload directory).</p><p>The import can add matches to your schedule, or completely overwrite the existing schedule. Please beware that when overwriting the schedule all existing predictions and rankings will be lost.</p><p>Existing matches can be exported using the <em>\'Download game schedule\'</em> button.</p>', 'football-pool' )
-					),
-					array(
-						'id' => 'details',
-						'title' => __( 'Match details', 'football-pool' ),
-						'content' => __( '<ul><li><em>match date</em> must be in UTC format.</li></ul>', 'football-pool' )
 					),
 				);
 		/** @noinspection HtmlUnknownAnchorTarget */
@@ -138,9 +131,14 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 		}
 	}
 
-	private static function import_csv( string $action = 'import_csv', string $file = '' )
-	{
-		global $pool;
+	/**
+	 * @param  string  $action
+	 * @param  string  $file
+	 *
+	 * @return array|array[]
+	 */
+	private static function import_csv( string $action = 'import_csv', string $file = '' ): array {
+		$pool = footballpool();
 		$msg = $err = [];
 		
 		if ( $action === 'upload_csv' && $file === '' ) return array( $err, $msg );
@@ -156,19 +154,40 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 				$err[] = __( 'Please check if the csv file exists and is readable.', 'football-pool' );
 			}
 		} else {
-			// Check if metadata is set in the csv, if not it should contain the csv column definition
-			$header = fgetcsv( $fp, 0, FOOTBALLPOOL_CSV_DELIMITER );
+			// Check if metadata is set in the csv, and get the offset from it.
+			// If not it should contain the csv column definition
+			$header = fgetcsv( $fp, 0, FOOTBALLPOOL_CSV_DELIMITER, "\"", "\\" );
 			if ( is_array( $header ) && strncmp( $header[0], '/*', 2 ) === 0 ) {
-				/** @noinspection PhpStatementHasEmptyBodyInspection */
-				while ( ( $header = fgetcsv( $fp, 0, FOOTBALLPOOL_CSV_DELIMITER ) ) !== false
-				        && str_replace( [" ", "\t"], '', $header[0] ) !== '*/' ) {
-					// keep reading
+				$meta = self::get_meta_from_csv( $file );
+				$offset = $meta['timezone'] !== '' ? $meta['timezone'] : 'UTC';
+
+				try {
+					$timezone = new DateTimeZone( $offset );
+					$msg[] = sprintf(
+						__( 'Time Zone "%s" will be applied to all times in the CSV', 'football-pool' ),
+						$offset
+					);
+				} catch ( Exception $e ) {
+					$timezone = new DateTimeZone( 'UTC' );
+					$err[] = sprintf(
+						__( 'Invalid UTC offset "%s" in the file', 'football-pool' ),
+						$offset
+					);
 				}
-				// with meta gone, next line should contain the csv column definition
-				$header = fgetcsv( $fp, 0, FOOTBALLPOOL_CSV_DELIMITER );
+
+				/** @noinspection PhpStatementHasEmptyBodyInspection */
+				while ( ( $header = fgetcsv( $fp, 0, FOOTBALLPOOL_CSV_DELIMITER, "\"", "\\" ) ) !== false
+				        && str_replace( [" ", "\t"], '', $header[0] ) !== '*/' ) {
+					// Keep reading...
+				}
+				// With meta gone, next line should contain the csv column definition
+				$header = fgetcsv( $fp, 0, FOOTBALLPOOL_CSV_DELIMITER, "\"", "\\" );
+			} else {
+				// No meta
+				$timezone = new DateTimeZone( "UTC" );
 			}
 
-			// check the columns
+			// Check the columns
 			if ( $header !== false ) {
 				$full_data = count( $header ) > 5;
 				if ( $full_data ) {
@@ -220,18 +239,18 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 						}
 
 						$row = 2; // Start at 2, because first row contains header
-						while ( ( $data = fgetcsv( $fp, 0, FOOTBALLPOOL_CSV_DELIMITER ) ) !== false ) {
-							// check the column count in the fetched row
+						while ( ( $data = fgetcsv( $fp, 0, FOOTBALLPOOL_CSV_DELIMITER, "\"", "\\" ) ) !== false ) {
+							// Check the column count in the fetched row
 							if ( count( $column_names ) !== count( $data ) ) {
 								$err[] = sprintf( __( 'Invalid column count on row %d.', 'football-pool' ), $row );
 								break;
 							}
-							// trim all values
+							// Trim all values
 							$data = array_map( 'trim', $data );
 
-							// ** process all data **
+							// ** Process all data **
 
-							// match date
+							// Match date
 							$play_date = $data[0];
 							if ( defined( 'FOOTBALLPOOL_CSV_DATE_FORMAT' ) ) {
 								$date_format = FOOTBALLPOOL_CSV_DATE_FORMAT;
@@ -249,11 +268,10 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 									__( "Invalid date '%s' on row %d. Date changed to current date '%s'.", 'football-pool' ),
 									$csv_date, $row, $play_date );
 							} else {
-								// If the play date is in a non-standard format, but valid, we translate it to ISO format
-								if ( $date_format !== 'Y-m-d H:i' && $date_format !== 'Y-m-d H:i:s' ) {
-									$d = DateTime::createFromFormat( $date_format, $play_date );
-									$play_date = $d->format( 'Y-m-d H:i:s' );
-								}
+								$d = DateTime::createFromFormat( $date_format, $play_date, $timezone );
+								// Finally, we make sure the date is in the correct format for the database,
+								// and we convert to UTC because dates in the database should always be in UTC.
+								$play_date = $d->setTimezone( new DateTimeZone( 'UTC' ) )->format( 'Y-m-d H:i:s' );
 							}
 
 							// Home team
@@ -385,12 +403,19 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 								'primary'
 							);
 		}
+
 		// return an array containing error messages and/or import messages
 		return [$err, $msg];
 	}
-	
-	private static function break_with_error( $val, $type, $row )
-	{
+
+	/**
+	 * @param $val
+	 * @param $type
+	 * @param $row
+	 *
+	 * @return false|string
+	 */
+	private static function break_with_error( $val, $type, $row ) {
 		if ( $val === 0 || $val === null ) {
 			$result = sprintf( __( 'Invalid or missing %1$s value on row %2$d.', 'football-pool' ), $type, $row );
 		} else {
@@ -398,16 +423,27 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 		}
 		return $result;
 	}
-	
-	private static function get_meta_from_csv( $file ) {
+
+	/**
+	 * @param $file
+	 *
+	 * @return array
+	 */
+	private static function get_meta_from_csv( $file ): array {
 		$all_headers = array(
-							'contributor'	=> 'Contributor',
-							'translator'	=> 'Translator',
-							'assets'		=> 'Assets URI',
+							'contributor' => 'Contributor',
+							'translator'  => 'Translator',
+							'assets'      => 'Assets URI',
+							'timezone'    => 'Time Zone',
 						);
 		return get_file_data( $file, $all_headers );
 	}
-	
+
+	/**
+	 * @param $log
+	 *
+	 * @return void
+	 */
 	private static function view_schedules( $log = '' ) {
 		if ( is_array( $log ) ) {
 			$errors = $log[0];
@@ -416,19 +452,19 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 			if ( count( $import_log ) > 0 ) self::notice( implode( '<br>', $import_log ), 'info' );
 		}
 		
-		// check if upload dir exists and is writable
+		// Check if upload dir exists and is writable
 		$data_is_readable = is_readable( trailingslashit( FOOTBALLPOOL_PLUGIN_DIR ) . 'data/schedules' );
 		$upload_is_readable = is_readable( FOOTBALLPOOL_CSV_UPLOAD_DIR );
 		$upload_is_writable = is_writable( FOOTBALLPOOL_CSV_UPLOAD_DIR );
 		
 		if ( ! $upload_is_readable && ! $data_is_readable ) {
-			// nothing readable so exit with an error
+			// Nothing readable so exit with an error
 			self::notice( __( "Please make sure that the directory 'data/schedules' exists in the plugin directory and that it is readable!", 'football-pool' ), 'error' );
 			self::notice( __( "Please make sure that the directory 'football-pool/schedules' exists in the WordPress uploads directory and that it is readable!", 'football-pool' ), 'error' );
 			return;
 		}
 		
-		// show warnings when one of the dirs is not readable
+		// Show warnings when one of the dirs is not readable
 		if ( ! $data_is_readable ) {
 			self::notice( __( "Please make sure that the directory 'data/schedules' exists in the plugin directory and that it is readable!", 'football-pool' ), 'error' );
 		}
@@ -460,7 +496,7 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 			
 			$i = 0;
 			$files = [];
-			// get the user's  files
+			// Get the user's files
 			$handle = @opendir( FOOTBALLPOOL_CSV_UPLOAD_DIR );
 			if ( $handle ) {
 				while ( false !== ( $entry = readdir( $handle ) ) ) {
@@ -474,7 +510,7 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 					}
 				}
 			}
-			// get the files included in the install
+			// Get the files that are shipped with the plugin
 			$schedule_dir = trailingslashit( FOOTBALLPOOL_PLUGIN_DIR . 'data/schedules' );
 			$handle = @opendir( $schedule_dir );
 			if ( $handle ) {
@@ -490,7 +526,7 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 				}
 			}
 			
-			// write the content
+			// Write the content
 			echo '<table class="fp-radio-list">';
 			echo '<tr>
 					<th></th>
@@ -504,12 +540,12 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 				echo '<tr class="csv-file"><td><input id="csv-', $i, '" name="csv_file" type="radio" value="', esc_attr( $file['file_path'] ), '"></td>';
 				echo '<td><label for="csv-', $i, '">', $file['file'], '</label></td>';
 				echo '<td>', $file['meta']['contributor'], ' ';
-				if ( $file['meta']['translator'] != '' ) {
+				if ( $file['meta']['translator'] !== '' ) {
 					printf( __( '(translation: %s)', 'football-pool' ), $file['meta']['translator'] );
 				}
 				echo '</td>';
 				echo '<td>';
-				if ( $file['meta']['assets'] != '' ) {
+				if ( $file['meta']['assets'] !== '' ) {
 					echo '<a title="', __( 'Upload these files to the \'football-pool\' folder in the uploads folder of your WP install', 'football-pool' ), '" href="', $file['meta']['assets'], '">', __( 'download files', 'football-pool' ), '</a>';
 				} else {
 					echo '';
@@ -548,14 +584,14 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 		}
 	
 		if ( $upload_is_writable ) {
-			// set the right the enctype for the upload
+			// Set the right the enctype for the upload
 			echo '</form><form method="post" enctype="multipart/form-data" action="">';
 			wp_nonce_field( FOOTBALLPOOL_NONCE_ADMIN );
 			echo '<input type="hidden" name="action" value="upload_csv">';
 			echo '<h3>', __( 'Upload new game schedule', 'football-pool' ), '</h3>';
-			// link to help/data explanation and explain the extra data that is needed for teams etc (e.g. photo)
-			// option to just upload, add or overwrite
-			// upload file
+			// Link to help/data explanation and explain the extra data that is needed for teams etc. (e.g. photo)
+			// Option to just upload, add or overwrite
+			// Upload file
 			echo '<div>';
 			echo '<input type="file" name="csv_file">';
 			self::secondary_button( 
@@ -567,8 +603,11 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 		}
 	}
 
-	private static function get_match_types() {
-		global $pool;
+	/**
+	 * @return array
+	 */
+	private static function get_match_types(): array {
+		$pool = footballpool();
 
 		$match_types = $pool->matches->get_match_types();
 		$output = [];
@@ -579,8 +618,11 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 		return $output;
 	}
 
+	/**
+	 * @throws Exception
+	 */
 	private static function view() {
-		global $pool;
+		$pool = footballpool();
 		$rows = $pool->matches->matches;
 
 		// TODO: update search to a date and/or match info filtering/search
@@ -596,14 +638,14 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 			$search_block .= Football_Pool_Admin::get_secondary_button( __( 'Filter', 'football-pool' ), 'search' );
 		}
 
-		// filter the rows by match type id
+		// Filter the rows by match type id
 		if ( $match_type_id > 0 ) {
 			$rows = array_filter( $rows, function( $v ) use ( $match_type_id ) {
 						return isset( $v['match_type_id'] ) && $v['match_type_id'] == $match_type_id;
 					} );
 		}
 
-		// option to alter (e.g. sorting) the matches in the admin independently from the frontend
+		// Option to alter (e.g. sorting) the matches in the admin independently of the frontend
 		$rows = apply_filters( 'footballpool_admin_matches', $rows );
 		
 		$pagination = new Football_Pool_Pagination( count( $rows ) );
@@ -648,7 +690,10 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 
 		submit_button();
 	}
-	
+
+	/**
+	 * @throws Exception
+	 */
 	private static function edit_handler( $item_id, $action ) {
 		$success = false;
 		switch ( $action ) {
@@ -669,12 +714,11 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 		if ( $action !== 'edit' ) {
 			if ( $success ) {
 				self::notice( __( 'Values updated.', 'football-pool' ) );
-				// reset the matches cache
-				global $pool;
+				// Reset the matches cache
 				// todo: can be replaced with one call to wp_cache_delete_multiple from wp 6.0.0 onwards
 				wp_cache_delete( FOOTBALLPOOL_CACHE_MATCHES, FOOTBALLPOOL_WPCACHE_NON_PERSISTENT );
 				wp_cache_delete( FOOTBALLPOOL_CACHE_ALL_MATCHES, FOOTBALLPOOL_WPCACHE_NON_PERSISTENT );
-				$pool->matches = new Football_Pool_Matches();
+				footballpool()->matches = new Football_Pool_Matches();
 			}
 			if ( $action === 'update_single_match' ) {
 				self::edit_handler( $item_id, 'edit' );
@@ -691,42 +735,44 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 		
 		do_action( 'footballpool_admin_match_delete', $item_id );
 		
-		// delete match, corresponding predictions and update linked bonus questions
+		// Delete match, corresponding predictions and update linked bonus questions
 		$sql = $wpdb->prepare( "DELETE FROM {$prefix}matches WHERE id = %d", $item_id );
 		$success = ( $wpdb->query( $sql ) !== false );
 		if ( $success ) {
-			// clear cache
-			global $pool;
+			// Clear cache
 			// todo: can be replaced with one call to wp_cache_delete_multiple from wp 6.0.0 onwards
 			wp_cache_delete( FOOTBALLPOOL_CACHE_MATCHES, FOOTBALLPOOL_WPCACHE_NON_PERSISTENT );
 			wp_cache_delete( FOOTBALLPOOL_CACHE_ALL_MATCHES, FOOTBALLPOOL_WPCACHE_NON_PERSISTENT );
-			$pool->matches = new Football_Pool_Matches();
-			// remove linked info
+			footballpool()->matches = new Football_Pool_Matches();
+			// Remove linked info
 			$sql = $wpdb->prepare( "DELETE FROM {$prefix}predictions WHERE match_id = %d", $item_id );
 			$success = ( $wpdb->query( $sql ) !== false );
 			$sql = $wpdb->prepare( "UPDATE {$prefix}bonusquestions SET match_id = 0 WHERE match_id = %d", $item_id );
 			$success = $success && ( $wpdb->query( $sql ) !== false );
 			$sql = $wpdb->prepare( "DELETE FROM {$prefix}rankings_matches WHERE match_id = %d", $item_id );
 			$success = $success && ( $wpdb->query( $sql ) !== false );
-			// update score history
+			// Update score history
 			$success = $success && self::update_score_history();
 		}
 		
 		return $success;
 	}
-	
+
+	/**
+	 * @throws Exception
+	 */
 	private static function edit( $item_id ) {
-		global $pool;
+		$pool = footballpool();
 
 		$values = array(
-						'play_date' => '',
-						'home_team_id' => '',
-						'away_team_id' => '',
-						'home_score' => '',
-						'away_score' => '',
-						'stadium_id' => 0,
-						'match_type_id' => 0
-						);
+			'play_date' => '',
+			'home_team_id' => '',
+			'away_team_id' => '',
+			'home_score' => '',
+			'away_score' => '',
+			'stadium_id' => 0,
+			'match_type_id' => 0
+		);
 		
 		$matches = $pool->matches;
 		$match = $matches->matches[$item_id] ?? false;
@@ -737,7 +783,10 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 		$types = $matches->get_match_types();
 		$options = [];
 		foreach ( $types as $type ) {
-			$options[] = array( 'value' => $type->id, 'text' => $type->name );
+			$options[] = [
+				'value' => $type->id,
+				'text' => Football_Pool_Utils::xssafe( $type->name )
+			];
 		}
 		$types = $options;
 		
@@ -745,7 +794,10 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 		$venues = $venues->get_stadiums();
 		$options = [];
 		foreach ( $venues as $venue ) {
-			$options[] = ['value' => $venue->id, 'text' => $venue->name];
+			$options[] = [
+				'value' => $venue->id,
+				'text' => Football_Pool_Utils::xssafe( $venue->name )
+			];
 		}
 		$venues = $options;
 		
@@ -753,40 +805,58 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 		$teams = $teams->team_names;
 		$options = [];
 		foreach( $teams as $id => $name ) {
-			$options[] = ['value' => $id, 'text' => $name];
+			$options[] = [
+				'value' => $id,
+				'text' => Football_Pool_Utils::xssafe( $name )
+			];
 		}
 		$teams = $options;
 		
-		// check if there is enough information to fill a match
+		// Check if there is enough information to fill a match
 		if ( count( $teams ) === 0 || count( $types ) === 0 || count( $venues ) === 0 ) {
 			/** @noinspection HtmlUnknownTarget */
 			self::notice( sprintf( __( 'You have to enter some <a href="%s">teams</a>, <a href="%s">venues</a> and <a href="%s">match types</a> first.', 'football-pool' ), '?page=footballpool-teams', '?page=footballpool-venues', '?page=footballpool-matchtypes'), 'important' );
 			self::cancel_button( __( 'Back', 'football-pool' ), true );
 			return;
 		}
-		
-		$matchdate = new DateTime( $values['play_date'] );
-		$matchdate = $matchdate->format( 'Y-m-d H:i' );
-		$matchdate_local = Football_Pool_Utils::date_from_gmt( $values['play_date'] );
-		if ( $item_id > 0 ) {
-			$desc = sprintf(
-				'<span title="%s">%s</span>',
-				__( 'time of the match in local time (WordPress setting)', 'football-pool' ),
-				sprintf( __( 'local time is %s', 'football-pool' ), $matchdate_local )
-			);
+
+		$timezone = self::get_timezone_for_edit_mode();
+		$use_local_time = self::use_local_time_for_edit_mode();
+
+		$matchdate = new DateTime( $values['play_date'], new DateTimeZone( 'UTC' ) );
+		$matchdate = $matchdate->setTimezone( $timezone )->format( 'Y-m-d H:i' );
+		if ( $use_local_time ) {
+			$matchdate_local = $matchdate;
 		} else {
-			$desc = '';
+			$matchdate_local = Football_Pool_Utils::date_from_gmt( $values['play_date'] );
 		}
-		$cols = array(
-					array( 'text', __( 'match date (UTC)', 'football-pool' ), 'match_date', $matchdate, $desc ),
-					array( 'dropdown', __( 'home team', 'football-pool' ), 'home_team_id', $values['home_team_id'], $teams, '' ),
-					array( 'dropdown', __( 'away team', 'football-pool' ), 'away_team_id', $values['away_team_id'], $teams, '' ),
-					array( 'text', __( 'home score', 'football-pool' ), 'home_score', $values['home_score'], '' ),
-					array( 'text', __( 'away score', 'football-pool' ), 'away_score', $values['away_score'], '' ),
-					array( 'dropdown', __( 'stadium', 'football-pool' ), 'stadium_id', $values['stadium_id'], $venues, '' ),
-					array( 'dropdown', __( 'match type', 'football-pool' ), 'match_type_id', $values['match_type_id'], $types, '' ),
-					array( 'hidden', '', 'item_id', $item_id )
+
+		$desc = '';
+
+		if ( $use_local_time ) {
+			$matchdate_field_label = __( 'local time', 'football-pool' );
+		} else {
+			$matchdate_field_label = __( 'UTC', 'football-pool' );
+			if ( $item_id > 0 ) {
+				$desc = sprintf(
+					'<span title="%s">%s</span>',
+					__( 'time of the match in local time (WordPress setting)', 'football-pool' ),
+					sprintf( __( 'local time is %s', 'football-pool' ), $matchdate_local )
 				);
+			}
+		}
+		$matchdate_field_label = sprintf( '%s (%s)', __( 'match date', 'football-pool' ), $matchdate_field_label );
+
+		$cols = [
+			['text', $matchdate_field_label, 'match_date', $matchdate, $desc],
+			['dropdown', __( 'home team', 'football-pool' ), 'home_team_id', $values['home_team_id'], $teams, ''],
+			['dropdown', __( 'away team', 'football-pool' ), 'away_team_id', $values['away_team_id'], $teams, ''],
+			['text', __( 'home score', 'football-pool' ), 'home_score', $values['home_score'], ''],
+			['text', __( 'away score', 'football-pool' ), 'away_score', $values['away_score'], ''],
+			['dropdown', __( 'stadium', 'football-pool' ), 'stadium_id', $values['stadium_id'], $venues, ''],
+			['dropdown', __( 'match type', 'football-pool' ), 'match_type_id', $values['match_type_id'], $types, ''],
+			['hidden', '', 'item_id', $item_id]
+		];
 		self::value_form( $cols );
 		echo '<p class="submit">';
 		self::primary_button( __( 'Save & Close', 'football-pool' ), 'update_single_match_close' );
@@ -794,7 +864,10 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 		self::cancel_button();
 		echo '</p>';
 	}
-	
+
+	/**
+	 * @throws Exception
+	 */
 	private static function update_single_match( $item_id ) {
 		$home_score = Football_Pool_Utils::post_integer( 'home_score', -1 );
 		$away_score = Football_Pool_Utils::post_integer( 'away_score', -1 );
@@ -803,19 +876,19 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 		$match_date = Football_Pool_Utils::post_string( 'match_date', '0000-00-00 00:00' );
 		$stadium_id = Football_Pool_Utils::post_integer( 'stadium_id', -1 );
 		$match_type_id = Football_Pool_Utils::post_integer( 'match_type_id', -1 );
-		
-		$success = self::update_match( $item_id, $home_team, $away_team, $home_score, $away_score, 
+
+		return self::update_match( $item_id, $home_team, $away_team, $home_score, $away_score,
 										$match_date, $stadium_id, $match_type_id );
-		
-		return $success;
 	}
-	
+
+	/**
+	 * @throws Exception
+	 */
 	private static function update() {
-		global $pool;
 		$match_saved = false;
 		
-		// update scores for all matches
-		foreach( $pool->matches->matches as $row ) {
+		// Update scores for all matches
+		foreach( footballpool()->matches->matches as $row ) {
 			$match_id = $row['id'];
 			$match_on_form = ( Football_Pool_Utils::post_integer( '_match_id_' . $match_id, 0 ) == $match_id );
 			$home_score = Football_Pool_Utils::post_integer( '_home_score_' . $match_id, -1 );
@@ -830,14 +903,16 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 			}
 		}
 		
-		if ( $match_saved ) $match_saved = $match_saved && self::update_score_history();
+		if ( $match_saved ) $match_saved = self::update_score_history();
 		
 		return $match_saved;
 	}
-	
-	private static function print_matches( $rows ) {	
-		$date_title = '';
-		$matchtype = '';
+
+	/**
+	 * @throws Exception
+	 */
+	private static function print_matches( $rows ) {
+		$date_title = $matchtype = '';
 		
 		if ( ! is_array( $rows ) || count( $rows ) === 0 ) {
 			printf( '<div class="no-matches-notice"><img src="%sassets/admin/images/matches-import-here.png" alt="%s" title="%s"></div>'
@@ -847,27 +922,45 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 			);
 		} else {
 			$tabindex = 1;
-			
+
+			$use_local_time = self::use_local_time_for_edit_mode();
+
+			if ( $use_local_time ) {
+				$column_label_1 = __( 'match date', 'football-pool' );
+				$column_title_1 = '';
+				$column_label_2 = __( 'match date', 'football-pool' );
+				$column_title_2 = __( 'local time', 'football-pool' );
+			} else {
+				$column_label_1 = __( 'local time', 'football-pool' );
+				$column_title_1 = __( 'time of the match in local time (WordPress setting)', 'football-pool' );
+				$column_label_2 = __( 'UTC', 'football-pool' );
+				$column_title_2 = __( 'Coordinated Universal Time', 'football-pool' );
+			}
+
 			echo '<table id="matchinfo" class="wp-list-table widefat matchinfo"><tbody id="the-list">';
 			foreach( $rows as $row ) {
 				if ( $matchtype != $row['matchtype'] ) {
 					$matchtype = $row['matchtype'];
 					echo '<tr class="type-row"><td class="sidebar-name" colspan="8"><h3>', Football_Pool_Utils::xssafe( $matchtype ), '</h3></td></tr>';
 				}
-				
-				$matchdate = new DateTime( $row['play_date'] );
-				$matchdate = $matchdate->format( 'Y-m-d H:i' );
-				$localdate = new DateTime( Football_Pool_Utils::date_from_gmt( $matchdate ) );
-				// $localdate = new DateTime( Football_Pool_Matches::format_match_time( $matchdate, 'Y-m-d H:i' ) );
-				$localdate_formatted = date_i18n( __( 'M d, Y', 'football-pool' )
-												, $localdate->format( 'U' ) );
-				if ( $date_title != $localdate_formatted ) {
+
+				// Create datetime object for the match (database is UTC), and set the timezone according edit settings
+				$matchdate = new DateTime( $row['play_date'], new DateTimeZone( 'UTC' ) );
+				$matchdate = $matchdate->setTimezone( self::get_timezone_for_edit_mode() );
+				// Create a local date for the match (with timezone settings of WP)
+				$localdate = new DateTime( $row['play_date'], new DateTimeZone( 'UTC' ) );
+				$localdate = $localdate->setTimezone( wp_timezone() );
+
+				// Get a localized string to display in the row
+				$localdate_formatted = date_i18n( __( 'M d, Y', 'football-pool' ), $localdate->format( 'U' ) );
+
+				if ( $date_title !== $localdate_formatted ) {
 					$date_title = $localdate_formatted;
-					echo '<tr class="date-row"><td class="sidebar-name"></td>',
-							'<td class="sidebar-name" title="', __( 'time of the match in local time (WordPress setting)', 'football-pool' ), '">', __( 'local time', 'football-pool' ), '</td>',
-							'<td class="sidebar-name"><span title="Coordinated Universal Time">', __( 'UTC', 'football-pool' ), '</span></td>',
-							'<td class="sidebar-name date-title" colspan="5">', $date_title, '</td>',
-							'</tr>';
+					echo '<tr class="date-row"><td class="sidebar-name"></td>';
+					echo '<td class="sidebar-name" title="', $column_title_1, '">', $column_label_1, '</td>';
+					echo '<td class="sidebar-name"><span title="', $column_title_2,'">', $column_label_2, '</span></td>';
+					echo '<td class="sidebar-name date-title" colspan="5">', $date_title, '</td>';
+					echo '</tr>';
 				}
 				
 				$page = wp_nonce_url( sprintf( '?page=%s&amp;item_id=%d'
@@ -881,7 +974,7 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 				echo '<tr class="match-row match-', $row['id'], '">',
 						'<td class="time column-match-id"><span class="item-id">', __( 'id', 'football-pool' ), ': ', $row['id'], '</span>', self::hidden_input( "_match_id_{$row['id']}", $row['id'], 'return' ), '</td>',
 						'<td class="time local column-localtime">', $localdate->format( 'Y-m-d H:i' ), '<br><div class="row-actions"><span class="edit"><a href="', $page, '&amp;action=edit">', __( 'Edit' ), '</a></span> | <span class="delete"><a onclick="return confirm( \'', $confirm, '\' )" href="', $page, '&amp;action=delete">', __( 'Delete' ), '</a></span></div></td>',
-						'<td class="time UTC column-utctime" title="', __( 'change match time', 'football-pool' ), '">', self::show_input( '_match_date_' . $row['id'], $matchdate, 16, '' ), '</td>',
+						'<td class="time UTC column-utctime" title="', __( 'change match time', 'football-pool' ), '">', self::show_input( '_match_date_' . $row['id'], $matchdate->format( 'Y-m-d H:i' ), 16, '' ), '</td>',
 						'<td class="home column-home">', self::teamname_input( (int) $row['home_team_id'], '_home_team_'.$row['id'] ), '</td>',
 						'<td class="score column-home-score">', self::show_input( '_home_score_' . $row['id'], $row['home_score'], 3, 'score', $tabindex++ ), '</td>',
 						'<td>-</td>',
@@ -892,13 +985,28 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 			echo '</tbody></table>';
 		}
 	}
-	
-	private static function show_input( $name, $value, $max_length = 3, $class = 'score', $tabindex = false ) {
+
+	/**
+	 * @param $name
+	 * @param $value
+	 * @param $max_length
+	 * @param $class
+	 * @param $tabindex
+	 *
+	 * @return string
+	 */
+	private static function show_input( $name, $value, $max_length = 3, $class = 'score', $tabindex = false ): string {
 		$tabindex = ( $tabindex !== false ) ? "tabindex=\"{$tabindex}\" " : "";
 		return sprintf( '<input type="text" name="%s" value="%s" maxlength="%s" class="%s" %s/>', 
 						$name, $value, $max_length, $class, $tabindex );
 	}
-	
+
+	/**
+	 * @param $team
+	 * @param $input_name
+	 *
+	 * @return string
+	 */
 	private static function teamname_input( $team, $input_name ): string
 	{
 		$teams = new Football_Pool_Teams;
@@ -930,19 +1038,33 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 		$select .= '</select>';
 		return $select;
 	}
-	
-	private static function update_match( $id, $home_team, $away_team, $home_score, $away_score, 
+
+	/**
+	 * @throws Exception
+	 */
+	private static function update_match( $id, $home_team, $away_team, $home_score, $away_score,
 									$match_date, $stadium_id = null, $match_type_id = null ) {
-		// if no valid team Id return false
+		// If no valid team ID return false
 		if ( $home_team == -1 || $away_team == -1 ) return false;
 
-		// check if match date is valid
 		$date_format = 'Y-m-d H:i';
 		if ( strlen( $match_date ) === strlen( '0000-00-00 00:00:00' ) ) $date_format = 'Y-m-d H:i:s';
-		if ( ! Football_Pool_Utils::is_valid_mysql_date( $match_date, $date_format ) ) $match_date = current_time( 'mysql', 1 );
 
-		global $wpdb, $pool;
+		$timezone = self::get_timezone_for_edit_mode();
+
+		// Check if match date is valid, and if not, then default to now
+		try {
+			$d = DateTime::createFromFormat( $date_format, $match_date, $timezone );
+			// Reset to UTC and format as a MYSQL date string
+			$match_date = $d->setTimeZone( new DateTimeZone( 'UTC' ) )->format( $date_format );
+		} catch ( Exception $e ) {
+			$match_date = current_time( 'mysql', 1 );
+		}
+		//if ( ! Football_Pool_Utils::is_valid_mysql_date( $match_date, $date_format ) ) $match_date = current_time( 'mysql', 1 );
+
+		global $wpdb;
 		$prefix = FOOTBALLPOOL_DB_PREFIX;
+		$pool = footballpool();
 		
 		if ( $id == 0 ) {
 			if ( $home_score < 0 || $away_score < 0 || ! is_numeric( $home_score ) || ! is_numeric( $away_score ) ) {
@@ -965,7 +1087,7 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 			$match = $pool->matches->matches[$id];
 			$old_home_score = $match['home_score'];
 			$old_away_score = $match['away_score'];
-			$old_date = new DateTime( $match['date'] );
+			$old_date = new DateTime( $match['date'], new DateTimeZone( 'UTC' ) );
 			$old_date = $old_date->format( 'Y-m-d H:i' );
 			$old_home_id = $match['home_team_id'];
 			$old_away_id = $match['away_team_id'];
@@ -999,8 +1121,29 @@ class Football_Pool_Admin_Games extends Football_Pool_Admin {
 		} else {
 			$retval = $id = $success ? $wpdb->insert_id : 0;
 		}
+
 		do_action( 'footballpool_admin_match_save', $id );
 		return $retval;
 	}
 
+	/**
+	 * @return DateTimeZone
+	 * @throws Exception
+	 */
+	private static function get_timezone_for_edit_mode(): DateTimeZone {
+		if ( self::use_local_time_for_edit_mode() ) {
+			$timezone = wp_timezone();
+		} else {
+			$timezone = new DateTimeZone( 'UTC' );
+		}
+
+		return $timezone;
+	}
+
+	/**
+	 * @return bool
+	 */
+	private static function use_local_time_for_edit_mode(): bool {
+		return Football_Pool_Utils::get_fp_option( 'local_time_match_edits', 0, 'int' ) === 1;
+	}
 }

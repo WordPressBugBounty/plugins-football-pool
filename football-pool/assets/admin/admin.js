@@ -6,17 +6,17 @@
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/LICENSE
  */
 
-jQuery( document ).ready( function() {
+jQuery( document ).ready( function( $ ) {
 	// initiate chosen lib on select boxes
-	if ( jQuery().chosen ) {
-		jQuery( '.fp-select.allow-single-deselect' ).not( '.no-chosen' ).chosen( {
+	if ( $().chosen ) {
+		$( '.fp-select.allow-single-deselect' ).not( '.no-chosen' ).chosen( {
 			allow_single_deselect: true,
 			hide_results_on_select: false,
 			inherit_select_classes: true,
 			disable_search_threshold: 10,
 			no_results_text: FootballPoolAdmin.chosen_no_results_text
 		} );
-		jQuery( '.fp-select' ).not( '.allow-single-deselect' ).not( '.no-chosen' ).chosen( {
+		$( '.fp-select' ).not( '.allow-single-deselect' ).not( '.no-chosen' ).chosen( {
 			disable_search_threshold: 10,
 			hide_results_on_select: false,
 			inherit_select_classes: true,
@@ -25,37 +25,51 @@ jQuery( document ).ready( function() {
 	}
 
 	// current page selection on enter
-	jQuery( 'body.football-pool input.current-page' ).keydown( function( e ) {
+	$( 'body.football-pool input.current-page' ).keydown( function( e ) {
 		let code = ( e.keyCode ? e.keyCode : e.which );
 		if ( code === 13 ) jQuery( 'input[name="action"]' ).val( '' );
 	} );
-	
-	// (un)select all matches in a match type
-	jQuery( 'div.matchtype input:checkbox' ).click( function() {
-		let matchtype_id = jQuery( this ).attr( 'id' ).replace( 'matchtype-', '' );
-		if ( jQuery( this ).is( ':checked' ) ) {
-			jQuery( 'div.matchtype-' + matchtype_id + ' input:checkbox' ).each( function() {
-				jQuery( this ).attr( 'checked', 'checked' );
-			} );
-		} else {
-			jQuery( 'div.matchtype-' + matchtype_id + ' input:checkbox' ).each( function() {
-				jQuery( this ).removeAttr( 'checked' );
-			} );
-		}
+
+	function sync( $group ) {
+		const $children = $group.find( '.fp-js-child' );
+		const checked = $children.filter( ':checked' ).length;
+		const $master = $( '.fp-js-select-all[data-target="#' + $group.attr( 'id' ) + '"]' );
+
+		$master.prop( {
+			checked: checked === $children.length,
+			indeterminate: checked > 0 && checked < $children.length
+		} );
+	}
+
+	// master → children
+	$( document ).on( 'change', '.fp-js-select-all', function () {
+		const $group = $( $( this ).data( 'target' ) );
+		$group.find( '.fp-js-child' ).prop( 'checked', this.checked );
+		sync( $group );
 	} );
-	
+
+	// children → master
+	$( document ).on( 'change', '.fp-js-child', function () {
+		sync( $( this ).closest( 'div' ) );
+	} );
+
+	// initial state
+	$( '.fp-js-select-all' ).each( function () {
+		sync( $( $( this ).data( 'target' ) ) );
+	} );
+
 	// show/hide row actions on tab navigation
-	jQuery( 'div.row-actions span a' ).each( function() {
-		jQuery( this ).focus( { el: jQuery( this ) }, function( e ) {
-			jQuery( window ).keyup( { el: e.data.el }, function( e ) {
+	$( 'div.row-actions span a' ).each( function() {
+		$( this ).focus( { el: $( this ) }, function( e ) {
+			$( window ).keyup( { el: e.data.el }, function( e ) {
 				let code = ( e.keyCode ? e.keyCode : e.which );
 				if ( code === 9 ) {
 					e.data.el.parent().parent().css( { left: 0 } ); 
 				}
 			} );
 		} );
-		jQuery( this ).blur( { el: jQuery( this ) }, function( e ) {
-			jQuery( window ).keyup( { el: e.data.el }, function( e ) {
+		$( this ).blur( { el: $( this ) }, function( e ) {
+			$( window ).keyup( { el: e.data.el }, function( e ) {
 				let code = ( e.keyCode ? e.keyCode : e.which );
 				if ( code === 9 ) {
 					e.data.el.parent().parent().css( { left: -9999 } ); 
@@ -65,7 +79,7 @@ jQuery( document ).ready( function() {
 	} );
 
 	/**
-	 * progressbar for help page and options page
+	 * progressbar for admin pages
 	 *
 	 * https://www.freecodecamp.org/news/back-to-top-button-and-page-progressbar-with-html-css-and-js/
 	 */
@@ -123,7 +137,14 @@ var FootballPoolAdmin = (function ( $ ) {
 		force_calculation_setting = 1;
 		calculate_score_history();
 	}
-	
+
+	// Reset cboxClose button on close of the colorbox
+	$( document ).bind( 'cbox_closed', function(){
+		$( '#cboxClose' )
+			.toggleClass( 'button-secondary', true )
+			.toggleClass( 'button-primary', false );
+	} );
+
 	function cancel_calculation() {
 		if ( ! calculation_completed ) {
 			const ajax_action = 'footballpool_calculate_scorehistory';
@@ -176,10 +197,12 @@ var FootballPoolAdmin = (function ( $ ) {
 													overlayClose: false,
 													escKey: true,
 													arrowKey: false,
-													close: FootballPoolAjax.colorbox_close,
+													close: FootballPoolAjax.colorbox_cancel,
 													innerWidth: "500px",
 													innerHeight: "285px"
 												} );
+								// Add button class to cboxClose
+								$( '#cboxClose' ).toggleClass( 'button button-secondary', true );
 								// bind cleanup method to colorbox
 								$( document ).bind( 'cbox_cleanup', function() {
 									cancel_calculation();
@@ -276,6 +299,12 @@ var FootballPoolAdmin = (function ( $ ) {
 											clear_elapsed_time_timer();
 											$( '#time-left' ).html( format_time( 0 ) );
 											$( '#ajax-loader' ).hide();
+											// Remove the cbox standard styling of the close button, change it to a primary button for focus
+											// and change the text to 'close'.
+											$( '#cboxClose' )
+												.toggleClass( 'button-secondary', false )
+												.toggleClass( 'button-primary', true )
+												.html( FootballPoolAjax.colorbox_close );
 										} else {
 											if ( ! calculation_cancelled ) calculate_score_history( response );
 										}

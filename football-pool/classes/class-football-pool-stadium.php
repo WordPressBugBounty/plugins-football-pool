@@ -3,7 +3,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -66,9 +66,8 @@ class Football_Pool_Stadium extends Football_Pool_Stadiums {
 					);
 	}
 	
-	public function get_plays() {
-		global $pool;
-		$matches = $pool->matches->matches;
+	public function get_plays(): array {
+		$matches = footballpool()->matches->matches;
 		
 		$plays = [];
 		foreach ( $matches as $match ) {

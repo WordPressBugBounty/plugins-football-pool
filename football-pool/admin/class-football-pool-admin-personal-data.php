@@ -2,9 +2,22 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2012-2022 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
- * @license https://plugins.svn.wordpress.org/football-pool/trunk/LICENSE
+ * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
+ *
+ * This file is part of Football pool.
+ *
+ * Football pool is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+ *
+ * Football pool is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+ * PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with Football pool.
+ * If not, see <https://www.gnu.org/licenses/>.
  */
 
 class Football_Pool_Admin_Personal_Data {
@@ -159,7 +172,7 @@ class Football_Pool_Admin_Personal_Data {
 			// We only gather data if we get a valid user.
 			$user_id = $user->ID;
 
-			$pool = new Football_Pool_Pool();
+			$pool = footballpool();
 			$league = $pool->get_league_for_user( $user->ID );
 			if ( $league > 1 && array_key_exists( $league, $pool->leagues ) ) {
 				$league = $pool->league_name( $league );
@@ -209,7 +222,7 @@ class Football_Pool_Admin_Personal_Data {
 			// We only gather data if we get a valid user.
 			$user_id = $user->ID;
 
-			$pool = new Football_Pool_Pool();
+			$pool = footballpool();
 			$predictions = $pool->get_bonus_questions_for_user( $user_id );
 
 			foreach ( $predictions as $prediction ) {
@@ -267,7 +280,7 @@ class Football_Pool_Admin_Personal_Data {
 			// We only gather data if we get a valid user.
 			$user_id = $user->ID;
 
-			$pool = new Football_Pool_Pool();
+			$pool = footballpool();
 			$predictions = $pool->matches->get_match_info_for_user_unfiltered( $user_id );
 
 			foreach ( $predictions as $prediction ) {

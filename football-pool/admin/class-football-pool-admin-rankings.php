@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -135,7 +135,7 @@ class Football_Pool_Admin_Rankings extends Football_Pool_Admin {
 	}
 	
 	private static function print_questions( $id ) {
-		global $pool;
+		$pool = footballpool();
 
 		$ranking_questions = [];
 		$ranking_definition = $pool->get_ranking_questions( $id );
@@ -147,23 +147,29 @@ class Football_Pool_Admin_Rankings extends Football_Pool_Admin {
 		
 		$rows = $pool->get_bonus_questions();
 		if ( count( $rows ) > 0 ) {
+			echo '<p><label><input type="checkbox" class="fp-js-select-all" data-target="#fp-ranking-questions">',
+				__( 'Select all', 'football-pool' ),
+				'</label></p>';
+			echo '<div id="fp-ranking-questions">';
 			foreach( $rows as $row ) {
-				$checked = ( in_array( $row['id'], $ranking_questions ) );
-				$checked = $checked ? 'checked="checked"' : '';
+				$state = in_array( $row['id'], $ranking_questions ) ? 'checked="checked"' : '';
+				echo '<p class="question">';
 				printf(
-					'<div class="question"><label><input type="checkbox" name="question-%d" value="1" %s>%s</label></div>',
+					'<label><input type="checkbox" name="question-%d" value="1" %s class="fp-js-child">%s</label>',
 					$row['id'],
-					$checked,
+					$state,
 					$row['question']
 				);
+				echo '</p>';
 			}
+			echo '</div>';
 		} else {
 			printf( '<div>%s</div>', __( 'no questions found', 'football-pool' ) );
 		}
 	}
 	
 	private static function print_matches( $id ) {
-		global $pool;
+		$pool = footballpool();
 		$matchtype = null;
 		
 		$teams = new Football_Pool_Teams();
@@ -180,12 +186,20 @@ class Football_Pool_Admin_Rankings extends Football_Pool_Admin {
 		$rows = $matches->matches;
 		if ( count( $rows ) > 0 ) {
 			foreach( $rows as $row ) {
-				if ( $matchtype != $row['matchtype'] ) {
+				if ( $matchtype !== $row['matchtype'] ) {
+					if ( $matchtype !== null ) echo '</div>';
 					$matchtype = $row['matchtype'];
+
+					echo '<div class="matchtype"><label>';
 					printf(
-						'<div class="matchtype"><label><input type="checkbox" id="matchtype-%d">%s</label></div>',
+						'<input type="checkbox" class="fp-js-select-all" data-target="#matches-for-matchtype-%d">%s',
 						$row['match_type_id'],
 						Football_Pool_Utils::xssafe( $matchtype )
+					);
+					echo '</label></div>';
+					printf(
+						'<div id="matches-for-matchtype-%d">',
+						$row['match_type_id']
 					);
 				}
 				
@@ -195,26 +209,28 @@ class Football_Pool_Admin_Rankings extends Football_Pool_Admin {
 				// $localdate_formatted = date_i18n( __( 'M d, Y', 'football-pool' )
 												// , $localdate->format( 'U' ) );
 				
-				$checked = ( in_array( $row['id'], $ranking_matches ) );
-				$checked = $checked ? 'checked="checked"' : '';
-				printf( '<div class="match matchtype-%d"><label><input type="checkbox" name="match-%d" value="1" %s>
-							%s - %s</label></div>'
-						, $row['match_type_id']
-						, $row['id']
-						, $checked
-						, Football_Pool_Utils::xssafe( $teams->team_names[$row['home_team_id']] )
-						, Football_Pool_Utils::xssafe( $teams->team_names[$row['away_team_id']] )
+				$state = in_array( $row['id'], $ranking_matches ) ? 'checked="checked"' : '';
+				echo '<p><label>';
+				printf(
+					'<input type="checkbox" name="match-%d" value="1" %s class="fp-js-child">%s - %s',
+					$row['id'],
+					$state,
+					Football_Pool_Utils::xssafe( $teams->team_names[$row['home_team_id']] ),
+					Football_Pool_Utils::xssafe( $teams->team_names[$row['away_team_id']] )
 				);
+				echo '</label></p>';
 			}
+			echo '</div>';
 		} else {
 			printf( '<div>%s</div>', __( 'no matches found', 'football-pool' ) );
 		}
 	}
 	
 	private static function save_ranking_definition( $id ) {
-		global $wpdb, $pool;
+		global $wpdb;
 		$prefix = FOOTBALLPOOL_DB_PREFIX;
-		
+		$pool = footballpool();
+
 		// save the matches
 //		$sql = $wpdb->prepare( "SELECT match_id FROM {$prefix}rankings_matches WHERE ranking_id = %d", $id );
 //		$old_set = $wpdb->get_col( $sql );
@@ -292,8 +308,7 @@ class Football_Pool_Admin_Rankings extends Football_Pool_Admin {
 	}
 	
 	private static function get_ranking( $id ) {
-		global $pool;
-		$ranking = $pool->get_ranking_by_id( $id );
+		$ranking = footballpool()->get_ranking_by_id( $id );
 		if ( $ranking != null && is_array( $ranking ) ) {
 			$output = array(
 				'name' => Football_Pool_Utils::xssafe( $ranking['name'] ),
@@ -312,7 +327,7 @@ class Football_Pool_Admin_Rankings extends Football_Pool_Admin {
 	 */
 	private static function get_rankings(): array
 	{
-		global $pool;
+		$pool = footballpool();
 		$rankings = $pool->get_rankings( 'user defined' );
 		$output = [];
 		foreach ( $rankings as $ranking ) {
@@ -387,9 +402,9 @@ class Football_Pool_Admin_Rankings extends Football_Pool_Admin {
 	}
 	
 	private static function delete_item( $id ) {
-		global $wpdb, $pool;
+		global $wpdb;
 		$prefix = FOOTBALLPOOL_DB_PREFIX;
-		$scorehistory = $pool->get_score_table();
+		$scorehistory = footballpool()->get_score_table();
 		
 		do_action( 'footballpool_admin_ranking_delete', $id );
 		

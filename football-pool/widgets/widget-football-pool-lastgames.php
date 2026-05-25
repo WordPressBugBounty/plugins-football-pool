@@ -3,7 +3,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -28,42 +28,47 @@
 defined( 'ABSPATH' ) or die( 'Cannot access widgets directly.' );
 add_action( 'widgets_init', function() { register_widget( 'Football_Pool_Last_Games_Widget' ); } );
 
-// dummy var for translation files
-$fp_translate_this = __( 'Last Games Widget', 'football-pool' );
-$fp_translate_this = __( 'this widget displays the last X played games of the tournament.', 'football-pool' );
-$fp_translate_this = __( 'last matches', 'football-pool' );
-$fp_translate_this = __( 'Number of games to show', 'football-pool' );
-
 class Football_Pool_Last_Games_Widget extends Football_Pool_Widget {
-	protected $widget = array(
-		'name' => 'Last Games Widget',
-		'description' => 'this widget displays the last X played games of the tournament.',
-		'do_wrapper' => true, 
-		
-		'fields' => array(
-			array(
-				'name' => 'Title',
-				'desc' => '',
-				'id' => 'title',
-				'type' => 'text',
-				'std' => 'last matches'
-			),
-			array(
-				'name' => 'Number of games to show',
-				'desc' => '',
-				'id' => 'num_games',
-				'type' => 'text',
-				'std' => '4'
-			),
-		)
-	);
-	
+	protected $widget = [];
+
+	public function __construct() {
+		$this->widget = array(
+			'name' => __( 'Last Games Widget', 'football-pool' ),
+			'description' => __( 'this widget displays the last X played games of the tournament.', 'football-pool' ),
+			'do_wrapper' => true,
+
+			'fields' => array(
+				array(
+					'name' => __( 'Title', 'football-pool' ),
+					'desc' => '',
+					'id' => 'title',
+					'type' => 'text',
+					'std' => __( 'last matches', 'football-pool' )
+				),
+				array(
+					'name' => __( 'Number of games to show', 'football-pool' ),
+					'desc' => '',
+					'id' => 'num_games',
+					'type' => 'text',
+					'std' => '4'
+				),
+			)
+		);
+
+		$classname = str_replace( '_', '', get_class( $this ) );
+		parent::__construct(
+			$classname,
+			$this->widget['name'] ?? $classname,
+			$this->widget['description']
+		);
+	}
+
 	public function html( string $title, array $args, array $instance ) {
-		global $pool;
+		$pool = footballpool();
 
 		extract( $args );
 		
-		$num_games = isset( $instance['num_games'] ) ? $instance['num_games'] : 4;
+		$num_games = $instance['num_games'] ?? 4;
 		
 		$output = '';
 		if ( $title !== '' ) {
@@ -126,14 +131,5 @@ class Football_Pool_Last_Games_Widget extends Football_Pool_Widget {
 		}
 		
 		echo apply_filters( 'footballpool_widget_html_last-games', $output );
-	}
-	
-	public function __construct() {
-		$classname = str_replace( '_', '', get_class( $this ) );
-		parent::__construct( 
-			$classname,
-			$this->widget['name'] ?? $classname,
-			$this->widget['description']
-		);
 	}
 }

@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -136,9 +136,12 @@ class Football_Pool_Admin_Bonus_Questions extends Football_Pool_Admin {
 		
 		self::admin_footer();
 	}
-	
+
+	/**
+	 * @throws Exception
+	 */
 	private static function edit_user_answers() {
-		global $pool;
+		$pool = footballpool();
 		$id = Football_Pool_Utils::request_integer( 'item_id' );
 		
 		if ( $id > 0 ) {
@@ -234,9 +237,12 @@ class Football_Pool_Admin_Bonus_Questions extends Football_Pool_Admin {
 			self::notice( __( 'No questions, users or answers found.', 'football-pool' ), 'info' );
 		}
 	}
-	
+
+	/**
+	 * @throws Exception
+	 */
 	private static function edit( $id ) {
-		global $pool;
+		$pool = footballpool();
 
 		$values = array(
 			'question'				=> '',
@@ -259,12 +265,12 @@ class Football_Pool_Admin_Bonus_Questions extends Football_Pool_Admin {
 		
 		// question types
 		$types = array( 
-						array( 'value' => '1', 'text' => __( 'text', 'football-pool' ) ), 
-						array( 'value' => '4', 'text' => __( 'multiline text', 'football-pool' ) ), 
-						array( 'value' => '2', 'text' => __( 'multiple choice, 1 answer (radio list)', 'football-pool' ) ), 
-						array( 'value' => '5', 'text' => __( 'multiple choice, 1 answer (dropdown)', 'football-pool' ) ), 
-						array( 'value' => '3', 'text' => __( 'multiple choice, one or more answers (checkbox list)', 'football-pool' ) ), 
-					);
+			array( 'value' => '1', 'text' => __( 'text', 'football-pool' ) ),
+			array( 'value' => '4', 'text' => __( 'multiline text', 'football-pool' ) ),
+			array( 'value' => '2', 'text' => __( 'multiple choice, 1 answer (radio list)', 'football-pool' ) ),
+			array( 'value' => '5', 'text' => __( 'multiple choice, 1 answer (dropdown)', 'football-pool' ) ),
+			array( 'value' => '3', 'text' => __( 'multiple choice, one or more answers (checkbox list)', 'football-pool' ) ),
+		);
 		// matches
 		$matches = array( array( 'value' => 0, 'text' => __( 'not linked', 'football-pool' ) ) );
 		foreach( $pool->matches->matches as $match ) {
@@ -335,9 +341,12 @@ class Football_Pool_Admin_Bonus_Questions extends Football_Pool_Admin {
 		if ( $id > 0 ) self::secondary_button( __( 'Edit User Answers', 'football-pool' ), 'user-answers', false );
 		echo '</p>';
 	}
-	
+
+	/**
+	 * @throws Exception
+	 */
 	private static function view() {
-		global $pool;
+		$pool = footballpool();
 		$questions = $pool->get_bonus_questions();
 
 		$search = Football_Pool_Utils::request_string( 's' );
@@ -567,12 +576,12 @@ class Football_Pool_Admin_Bonus_Questions extends Football_Pool_Admin {
 		$answer = trim( strtolower( $answer ) );
 		if ( $answer !== '' ) {
 			$sql = $wpdb->prepare( "UPDATE {$prefix}bonusquestions_useranswers SET correct = 1 
-									WHERE question_id = %d AND LOWER( answer ) = %s"
+									WHERE question_id = %d AND TRIM( LOWER( answer ) ) = %s"
 									, $question_id
 									, $answer );
 			$wpdb->query( $sql );
 			$sql = $wpdb->prepare( "UPDATE {$prefix}bonusquestions_useranswers SET correct = 0 
-									WHERE question_id = %d AND LOWER( answer ) <> %s"
+									WHERE question_id = %d AND TRIM( LOWER( answer ) ) <> %s"
 									, $question_id
 									, $answer );
 			$wpdb->query( $sql );

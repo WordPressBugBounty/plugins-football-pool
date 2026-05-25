@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -24,8 +24,7 @@ class Football_Pool_Admin_Help extends Football_Pool_Admin {
 	public function __construct() {}
 	
 	private static function calc_score( $home, $away, $user_home, $user_away, $joker_multiplier ) {
-		global $pool;
-		$score = $pool->calc_score( $home, $away, $user_home, $user_away, 0, 0, 0 );
+		$score = footballpool()->calc_score( $home, $away, $user_home, $user_away, 0, 0, 0 );
 		
 		return $joker_multiplier * $score['score'];
 	}
@@ -127,9 +126,16 @@ class Football_Pool_Admin_Help extends Football_Pool_Admin {
 			<p>
 				<strong>Matches have to be entered or imported with
 					<a target="_blank" href="https://en.wikipedia.org/wiki/Coordinated_Universal_Time"
-					   title="Coordinated Universal Time">UTC</a> times</strong> for the kickoff. The admin screen also
-				shows the times for the match in your own timezone (according to the <a href="options-general.php">setting
-					in WordPress</a>) so you can check if the times are correct.
+					   title="Coordinated Universal Time">UTC</a> times</strong> for the kickoff when using the default
+				settings of the plugin. The admin screen also shows the times for the match in your own timezone
+				(according to the <a href="options-general.php">setting in WordPress</a>) so you can check if the
+				times are correct.
+			</p>
+			<p>
+				Using UTC times helps ensure that match schedules are consistent when shared between plugin users. However, you can change the default time setting for the match admin screens in the plugin settings. If you do change this setting, remember to switch it back to UTC before importing schedules from the forum or those provided with the plugin.
+			</p>
+			<p>
+				<strong>Note:</strong> Import CSV files can include a time zone offset in the file header. If present, this offset will be applied during import. However, match exports will always use the UTC times stored in the database, regardless of your import or editing settings.
 			</p>
 
 			<div class="help important">
@@ -593,9 +599,12 @@ EOT;
 				the plugin can filter the files according to the culture that is set as the locale for the blog.
 			</p>
 			<p>
-				The header of the file may contain optional meta information about the author of the import and/or the
-				location of the assets for the teams and venues. If meta information exists in the CSV file, the
-				information is added on the file select list. File header example:
+				The file header can optionally include metadata such as the author's name, the time zone used
+				for the match dates (default is UTC, and the value should be in a valid
+				<a href="https://www.php.net/manual/en/datetimezone.construct.php" target="_blank">time zone</a> format,
+				e.g., "-0300", "+2" or "CST"), and/or the location of team and venue asset files.
+				If metadata is present in the CSV file, it will be displayed in the file selection list.<br><br>
+				File header example:
 			</p>
 			<pre class="code">
 			/*
@@ -604,14 +613,15 @@ EOT;
 			*/
 			</pre>
 			<p>
-				or, when you want to give credits to the original author of the schedule when you only translated
-				the team names, etc.:
+				or, when you want to give credits to the original author of the schedule because you only translated
+				the team names, and this example includes the time zone offset:
 			</p>
 			<pre class="code">
 			/*
-			 Contributor: Antoine Hurkmans
-			 Translator: John Doe
+			 Contributor: John Doe
+			 Translator: Antoine Hurkmans
 			 Assets URI: https://dl.dropbox.com/u/397845/wordpressfootballpool/uefa-european-championship-2012.zip
+			 Time Zone: +02:00
 			*/
 			</pre>
 
@@ -1292,13 +1302,19 @@ EOT;
 
 			<h3>[fp-next-match-form]</h3>
 			<p>
-				Shows a prediction form for the next match (or matches if there are multiple matches starting at
-				the same time). In case there are multiple matches in the data set, you can limit the form to only X matches
-				by supplying the optional 'num' paraneter.
+				Displays a prediction form for the next upcoming match.<br>
+				If multiple matches start at the same time, the form includes all of them by default. You can limit the
+				number of matches shown in the form using the optional 'num' parameter (e.g.
+				<span class="code">[fp-next-match-form num=2]</span>).
 			</p>
+			<div class="help important">
+				<strong>Note:</strong> This does <em>not</em> show the next X matches by time — only the matches that
+				start at the same time as the next match.
+			</div>
 			<p>
-				If the current visitor is not logged in and/or not a player in the pool, or there are no next matches,
-				an empty &lt;span&gt; is returned that can be given a textual message via CSS (based on the class).
+				If the visitor is not logged in, is not participating in the pool, or if there are no upcoming matches,
+				the shortcode returns an empty &lt;span&gt;. You can style this span (e.g. to display a message) using
+				CSS based on its class.
 			</p>
 			<table class="widefat help">
 				<tr>
@@ -1794,8 +1810,9 @@ EOT;
 			</p>
 			<p>For now, you have to follow these steps:</p>
 			<ol>
-				<li>Download the Highcharts API from <a target="_blank" href="https://www.highcharts.com/download">https://www.highcharts.com/download</a>.</li>
-				<li>Place the <span class="code">highcharts.js</span> file in the following path <span class="code">/wp-content/plugins/highcharts-js/highcharts.js</span>.</li>
+				<li>Download the Highcharts Charting Core package from <a target="_blank" href="https://www.highcharts.com/download">https://www.highcharts.com/download</a>.</li>
+				<li>Unzip and go to the <span class="code">core</span> folder.</li>
+				<li>Copy the <span class="code">highcharts.js</span> file to the following path <span class="code">/wp-content/plugins/highcharts-js/highcharts.js</span>.</li>
 				<li>Enable the charts on the <a href="?page=footballpool-options">Options page</a>.</li>
 			</ol>
 			<p>

@@ -45,6 +45,9 @@ form.shortcode-dialog legend {
 	width: 35%;
 	float: left;
 	padding-right: 10px;
+	display: inline-block;
+	white-space: normal;
+	word-wrap: break-word;
 }
 form.shortcode-dialog > div > div > div,
 form.shortcode-dialog > div > div > fieldset > div {

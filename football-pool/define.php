@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -20,7 +20,7 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-global $wpdb, $pool;
+global $wpdb;
 
 // Admin screen options (defaults per page)
 const FOOTBALLPOOL_ADMIN_DEFAULT_PER_PAGE = 20;
@@ -155,6 +155,7 @@ if ( ! defined( 'FOOTBALLPOOL_LARGE_AVATAR' ) ) define( 'FOOTBALLPOOL_LARGE_AVAT
 if ( ! defined( 'FOOTBALLPOOL_TEMPLATE_PARAM_DELIMITER' ) ) define( 'FOOTBALLPOOL_TEMPLATE_PARAM_DELIMITER', '%' );
 if ( ! defined( 'FOOTBALLPOOL_CONTENT_FILTER_PRIORITY' ) ) define( 'FOOTBALLPOOL_CONTENT_FILTER_PRIORITY', 50 );
 if ( ! defined( 'FOOTBALLPOOL_REDIRECT_FILTER_PRIORITY' ) ) define( 'FOOTBALLPOOL_REDIRECT_FILTER_PRIORITY', 50 );
+if ( ! defined( 'FOOTBALLPOOL_REGISTRATION_FILTER_PRIORITY' ) ) define( 'FOOTBALLPOOL_REGISTRATION_FILTER_PRIORITY', 90 );
 if ( ! defined( 'FOOTBALLPOOL_TOP_PLAYERS' ) ) define( 'FOOTBALLPOOL_TOP_PLAYERS', 5 ); // used on the stats page
 if ( ! defined( 'FOOTBALLPOOL_ADMIN_QUESTION_MAX_CHARS' ) ) define( 'FOOTBALLPOOL_ADMIN_QUESTION_MAX_CHARS', 120 ); // used in the admin question view to cut off very long questions that clutter the screen
 if ( ! defined( 'FOOTBALLPOOL_ENCODING' ) ) define( 'FOOTBALLPOOL_ENCODING', 'UTF-8' );

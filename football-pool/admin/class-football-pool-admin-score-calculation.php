@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -45,7 +45,7 @@ class Football_Pool_Admin_Score_Calculation extends Football_Pool_Admin {
 		global $wpdb;
 		$prefix = FOOTBALLPOOL_DB_PREFIX;
 
-		$pool = new Football_Pool_Pool( FOOTBALLPOOL_DEFAULT_SEASON );
+		$pool = footballpool();
 
 		$is_cli = ( $is_cli === true );
 
@@ -1088,7 +1088,7 @@ class Football_Pool_Admin_Score_Calculation extends Football_Pool_Admin {
 
 			// Throw error if the default ranking is missing from the database
 			if ( count( $rankings ) === 0 || ! in_array( FOOTBALLPOOL_RANKING_DEFAULT, $rankings ) ) {
-				trigger_error( 'Football Pool => default ranking with ID ' . FOOTBALLPOOL_RANKING_DEFAULT .
+				trigger_error( 'Football Pool: default ranking with ID ' . FOOTBALLPOOL_RANKING_DEFAULT .
 					' is missing in the `' . FOOTBALLPOOL_DB_PREFIX . 'rankings` table', E_USER_ERROR );
 			}
 

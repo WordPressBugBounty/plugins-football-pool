@@ -3,7 +3,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -83,10 +83,8 @@ class Football_Pool_Shoutbox {
 	}
 
 	private function send_notification( $text, $user_id ) {
-		global $pool;
-
 		$shoutbox_text = Football_Pool_Utils::xssafe( $text, 'UTF-8', false );
-		$user_name = $pool->user_name( $user_id );
+		$user_name = footballpool()->user_name( $user_id );
 
 		$mail_subject = 'Football Pool: New shoutbox message';
 		$mail_message = sprintf(

@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -137,19 +137,20 @@ class Football_Pool_Team extends Football_Pool_Teams {
 					);
 	}
 	
-	public function get_plays() {
-		global $pool;
-		$matches = $pool->matches->matches;
+	public function get_plays(): array {
+		$matches = footballpool()->matches->matches;
 		
 		$plays = [];
 		foreach ( $matches as $match ) {
-			if ( $match['home_team_id'] == $this->id || $match['away_team_id'] == $this->id ) $plays[] = $match;
+			if ( $match['home_team_id'] == $this->id || $match['away_team_id'] == $this->id ) {
+				$plays[] = $match;
+			}
 		}
 		
 		return $plays;
 	}
 	
-	public function get_stadiums() {
+	public function get_stadiums(): array {
 		global $wpdb;
 		$prefix = FOOTBALLPOOL_DB_PREFIX;
 		$sql = $wpdb->prepare( "SELECT DISTINCT s.id, s.name, s.photo, s.comments

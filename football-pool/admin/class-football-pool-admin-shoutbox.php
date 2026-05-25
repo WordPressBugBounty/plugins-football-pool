@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -84,11 +84,11 @@ class Football_Pool_Admin_Shoutbox extends Football_Pool_Admin {
 	private static function edit( $id ) {
 		global $current_user;
 		
-		$values = array(
-						'user_name' => $current_user->display_name,
-						'shout_text' => '',
-						'shout_date' => __( 'now', 'football-pool' )
-						);
+		$values = [
+			'user_name' => $current_user->display_name,
+			'shout_text' => '',
+			'shout_date' => __( 'now', 'football-pool' )
+		];
 		
 		$message = self::get_message( $id );
 		if ( $message && $id > 0 ) {
@@ -97,7 +97,7 @@ class Football_Pool_Admin_Shoutbox extends Football_Pool_Admin {
 		}
 		$cols = array(
 					array( 'no_input', __( 'name', 'football-pool' ), 'user_name', $values['user_name'], '' ),
-					array( 'text', __( 'message', 'football-pool' ), 'message', $values['shout_text'], '' ),
+					array( 'textarea', __( 'message', 'football-pool' ), 'message', $values['shout_text'], '' ),
 					array( 'no_input', __( 'time', 'football-pool' ), 'time', $values['shout_date'], '' ),
 					array( 'hidden', '', 'item_id', $id ),
 					array( 'hidden', '', 'action', 'save' )
@@ -186,10 +186,18 @@ class Football_Pool_Admin_Shoutbox extends Football_Pool_Admin {
 		$message = $input[1];
 		
 		$shoutbox = new Football_Pool_Shoutbox;
-		
+
+		$max_chars = Football_Pool_Utils::get_fp_option(
+			'shoutbox_max_chars', FOOTBALLPOOL_SHOUTBOX_MAXCHARS, 'int'
+		);
+
 		if ( $id == 0 ) {
-			$shoutbox->save_shout( $message, $current_user->ID, FOOTBALLPOOL_SHOUTBOX_MAXCHARS );
+			$shoutbox->save_shout( $message, $current_user->ID, $max_chars );
 		} else {
+			if ( strlen( $message ) > $max_chars ) {
+				$message = substr( $message, 0, $max_chars );
+			}
+
 			$sql = $wpdb->prepare( "UPDATE {$prefix}shoutbox SET shout_text = %s WHERE id = %d", $message, $id );
 			$wpdb->query( $sql );
 		}

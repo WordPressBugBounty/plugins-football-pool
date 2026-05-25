@@ -3,7 +3,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -23,7 +23,7 @@
 
 class Football_Pool_Teams_Page {
 	public function page_content() {
-		global $pool;
+		$pool = footballpool();
 
 		$output = '';
 		

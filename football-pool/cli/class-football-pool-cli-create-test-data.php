@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -31,7 +31,10 @@ WP_CLI::add_command( 'football-pool test-data', 'Football_Pool_CLI_Create_Test_D
 
 class Football_Pool_CLI_Create_Test_Data {
 	/**
-	 * Creates test data in your Football Pool install.
+	 * Creates test user data in your Football Pool install.
+	 *
+	 * It will not create matches. If you would like predictions for your test users,
+	 * then first import one of the example CSV files with match data.
 	 *
 	 * ## OPTIONS
 	 *

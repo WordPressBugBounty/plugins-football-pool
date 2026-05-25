@@ -2,9 +2,22 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2012-2022 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
- * @license https://plugins.svn.wordpress.org/football-pool/trunk/LICENSE
+ * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
+ *
+ * This file is part of Football pool.
+ *
+ * Football pool is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+ *
+ * Football pool is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+ * PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with Football pool.
+ * If not, see <https://www.gnu.org/licenses/>.
  */
 
 /** @noinspection SqlResolve */
@@ -133,9 +146,7 @@ class Football_Pool_Admin_Match_Types extends Football_Pool_Admin {
 	}
 	
 	private static function get_match_type( $id ) {
-		global $pool;
-
-		$match_type = $pool->matches->get_match_type_by_id( $id );
+		$match_type = footballpool()->matches->get_match_type_by_id( $id );
 		if ( is_object( $match_type ) ) {
 			$output = array(
 							'name' => $match_type->name,
@@ -148,10 +159,8 @@ class Football_Pool_Admin_Match_Types extends Football_Pool_Admin {
 		return $output;
 	}
 	
-	private static function get_match_types() {
-		global $pool;
-
-		$match_types = $pool->matches->get_match_types();
+	private static function get_match_types(): array {
+		$match_types = footballpool()->matches->get_match_types();
 		$output = [];
 
 		foreach ( $match_types as $match_type ) {

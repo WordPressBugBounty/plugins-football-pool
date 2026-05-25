@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -22,18 +22,20 @@
 
 /** @noinspection SqlResolve */
 
-// dummy var for translation files
-$fp_translate_this = __( 'matches', 'football-pool' );
-$fp_translate_this = __( 'teams', 'football-pool' );
-$fp_translate_this = __( 'groups', 'football-pool' );
-$fp_translate_this = __( 'venues', 'football-pool' );
-$fp_translate_this = __( 'rules', 'football-pool' );
-$fp_translate_this = __( 'prediction sheet', 'football-pool' );
-$fp_translate_this = __( 'ranking', 'football-pool' );
-$fp_translate_this = __( 'statistics', 'football-pool' );
-$fp_translate_this = __( 'player predictions', 'football-pool' );
-
 class Football_Pool {
+	// Unused code, but needed for translation files
+	private function i18n() {
+		$fp_translate_this = __( 'matches', 'football-pool' );
+		$fp_translate_this = __( 'teams', 'football-pool' );
+		$fp_translate_this = __( 'groups', 'football-pool' );
+		$fp_translate_this = __( 'venues', 'football-pool' );
+		$fp_translate_this = __( 'rules', 'football-pool' );
+		$fp_translate_this = __( 'prediction sheet', 'football-pool' );
+		$fp_translate_this = __( 'ranking', 'football-pool' );
+		$fp_translate_this = __( 'statistics', 'football-pool' );
+		$fp_translate_this = __( 'player predictions', 'football-pool' );
+	}
+
 	private static array $pages =
 		array(
 						array( 'slug' => 'tournament', 'title' => 'matches', 'comment' => 'closed' ),
@@ -51,10 +53,6 @@ class Football_Pool {
 	 * Init function
 	 */
 	public static function init() {
-		// Initiate the Pool
-		global $pool;
-		$pool = new Football_Pool_Pool( FOOTBALLPOOL_DEFAULT_SEASON );
-
 		do_action( 'footballpool_pre_init' );
 
 		load_plugin_textdomain( FOOTBALLPOOL_TEXT_DOMAIN );
@@ -146,7 +144,8 @@ class Football_Pool {
 					, 'FootballPoolAjax'
 					, array(
 						'fp_recalc_nonce' => wp_create_nonce( FOOTBALLPOOL_NONCE_SCORE_CALC ),
-						'colorbox_close' => __( 'close', 'football-pool' ),
+						'colorbox_close' => __( 'Close', 'football-pool' ),
+						'colorbox_cancel' => __( 'Cancel', 'football-pool' ),
 						'colorbox_html' => '',
 						'error_message' => __( 'Something went wrong while (re)calculating the scores. See the <a href="?page=footballpool-help#ranking-calculation">help page</a> for details on solving this problem.', 'football-pool' ),
 						'error_label' => __( 'Error message', 'football-pool' ),
@@ -171,12 +170,12 @@ class Football_Pool {
 				);
 
 				// Datetimepicker
-				Football_Pool_Utils::include_css( 'assets/libs/datetimepicker/jquery.datetimepicker.min.css',
-					'datetimepicker-css'
-				);
-				Football_Pool_Utils::include_js( 'assets/libs/datetimepicker/jquery.datetimepicker.min.js',
-					'datetimepicker-js', ['jquery']
-				);
+				// Football_Pool_Utils::include_css( 'assets/libs/datetimepicker/jquery.datetimepicker.min.css',
+					// 'datetimepicker-css'
+				// );
+				// Football_Pool_Utils::include_js( 'assets/libs/datetimepicker/jquery.datetimepicker.min.js',
+					// 'datetimepicker-js', ['jquery']
+				// );
 
 				/* End 3rd party libs */
 			}
@@ -193,14 +192,19 @@ class Football_Pool {
 	}
 
 	/**
-	 * @param string $action
+	 * @param  string|null  $action
+	 *
 	 * @return void
 	 */
-	public static function activate( string $action = 'install' ): void
+	public static function activate( ?string $action = 'install' ): void
 	{
 		global $wpdb;
 		$prefix = FOOTBALLPOOL_DB_PREFIX;
-		
+
+		// Manually load translations o prevent the notice
+		// 'Function _load_textdomain_just_in_time was called incorrectly'
+		load_plugin_textdomain( FOOTBALLPOOL_TEXT_DOMAIN );
+
 		$action = empty( $action ) ? 'install' : $action;
 		
 		// try to create the default upload dirs for the football pool
@@ -251,12 +255,6 @@ class Football_Pool {
 		// end admin capabilities
 		
 		// default plugin options
-		$date = new DateTime();
-		$date_formatted = date_i18n(
-			_x( 'j F', 'this is a date format string (see https://php.net/date)', 'football-pool' ),
-			$date->format( 'U' )
-		);
-		
 		$options = [];
 		$options['fullpoints'] = FOOTBALLPOOL_FULLPOINTS;
 		$options['totopoints'] = FOOTBALLPOOL_TOTOPOINTS;
@@ -270,8 +268,8 @@ class Football_Pool {
 		// We strip the "http(s):" part from the dashboard widget to make the stored default URL scheme-relative.
 		// This way we prevent the unsecure content message in the admin when we activate the plugin
 		// without SSL and switch to SSL later.
-		$options['dashboard_image'] = str_replace( ['http:', 'https:'], '', FOOTBALLPOOL_ASSETS_URL ) .
-			'admin/images/dashboardwidget.png';
+		$options['dashboard_image'] =
+			str_replace( ['http:', 'https:'], '', FOOTBALLPOOL_ASSETS_URL ) . 'admin/images/dashboardwidget.png';
 		$options['matches_locktime'] = '';
 		$options['bonus_question_locktime'] = '';
 		$options['keep_data_on_uninstall'] = 0; // 1: yes, 0: no (we set this to 0 to make sure we install the pages on first install, we'll change it later).
@@ -331,6 +329,8 @@ class Football_Pool {
 		$options['enable_league_in_profile'] = 0; // defaults to false
 		$options['diffpoints_rule'] = 2; // defaults to: full scores and toto scores, including draws
 		$options['shoutbox_notifications'] = 1; // defaults to true
+		$options['shoutbox_hide_form'] = 0; // defaults to false
+		$options['local_time_match_edits'] = 0; // defaults to false
 
 		foreach ( $options as $key => $value ) {
 			Football_Pool_Utils::update_fp_option( $key, $value, 'keep existing values' );
@@ -605,11 +605,11 @@ class Football_Pool {
 		}
 	}
 
-	public static function get_pages() {
+	public static function get_pages(): array {
 		return self::$pages;
 	}
 
-	public static function get_page_link( $slug ) {
+	public static function get_page_link( $slug ): string {
 		$id = Football_Pool_Utils::get_fp_option( 'page_id_' . $slug );
 		return $id && get_post( $id ) ? get_page_link( $id ) : '';
 	}
@@ -621,7 +621,7 @@ class Football_Pool {
 	 *
 	 * @return bool
 	 */
-	public static function is_at_least_version( $version ) {
+	public static function is_at_least_version( $version ): bool {
 		// split the version strings on '.'
 		$plugin_ver = explode( '.', self::get_db_version() );
 		$version = explode( '.', $version );
@@ -674,7 +674,11 @@ class Football_Pool {
 	// todo: make admin approval of leagues an option (default = false, true for existing installs)
 	public static function new_pool_user( $user_id ) {
 		// add extra meta fields
-		$default_league = Football_Pool_Utils::get_fp_option( 'default_league_new_user', FOOTBALLPOOL_LEAGUE_DEFAULT, 'ínt' );
+		$default_league = Football_Pool_Utils::get_fp_option(
+			'default_league_new_user',
+			FOOTBALLPOOL_LEAGUE_DEFAULT,
+			'ínt'
+		);
 		$league = Football_Pool_Utils::post_int( 'league', $default_league );
 		
 		do_action( 'footballpool_pre_new_user', $user_id, $league );
@@ -687,7 +691,14 @@ class Football_Pool {
 		self::update_user_custom_tables( $user_id, $default_league );
 		do_action( 'footballpool_new_user', $user_id, $league );
 	}
-	
+
+	public static function update_user_custom_tables( $user_id, $league_id ) {
+		$pool = footballpool();
+		if ( $pool->has_leagues ) {
+			$pool->update_league_for_user( $user_id, $league_id, 'update league' );
+		}
+	}
+
 	public static function player_registration_redirect( $redirect_to ) {
 		$plugin_option = Football_Pool_Utils::get_fp_option( 'redirect_url_after_registration', '' );
 		if ( $plugin_option !== '' ) {
@@ -713,36 +724,30 @@ class Football_Pool {
 		return apply_filters( 'footballpool_login_redirect_url', $redirect_to );
 	}
 	
-	public static function update_user_custom_tables( $user_id, $league_id ) {
-		global $pool;
-		if ( $pool->has_leagues ) {
-			$pool->update_league_for_user( $user_id, $league_id, 'update league' );
-		}
-	}
-	
 	public static function registration_form_extra_fields() {
-		global $pool;
+		$pool = footballpool();
 		if ( $pool->has_leagues ) {
 			echo '<p><label for="league">', __( 'Play in league', 'football-pool' ), '<br>', 
 				$pool->league_select( 0, 'league' ), '</label></p><p><br></p>';
 		}
 	}
 	
-	public static function registration_form_post() {
-		// handle the registration
-	}
-	
-	public static function registration_check_fields( $errors ) {
-		global $pool;
-		if ( $pool->has_leagues ) {
+	public static function registration_check_fields( WP_Error $errors ): WP_Error {
+		if ( footballpool()->has_leagues ) {
 			// check if the new player picked a league to play in
-			if ( Football_Pool_Utils::post_int( 'league', 0 ) === 0 ) {
+			if ( Football_Pool_Utils::post_int( 'league', -1 ) === -1 ) {
 				$errors->add( 'league_error',
 					__( '<strong>Error:</strong> You must choose a league to play in!', 'football-pool' )
 				);
 			}
 		}
 		return $errors;
+	}
+
+	public static function registration_form_post(
+		string $sanitized_user_login, string $user_email, WP_Error $errors
+	) {
+		// handle the registration
 	}
 
 	public static function show_admin_bar( $content ) {
@@ -763,12 +768,13 @@ class Football_Pool {
 		return $show_bar ? $content : false;
 	}
 
-	// the dashboard can be a bit confusing for new users, so add a widget for an easy way to click to the homepage
+	// The dashboard can be a bit confusing for new users, so add a widget for an easy way to click to the homepage
 	public static function dashboard_widget() {
 		$img = Football_Pool_Utils::get_fp_option( 'dashboard_image' );
 		
 		echo '<p>',
-			__( 'Click below to go to the football pool and predict your scores. Good luck!', 'football-pool' ), '</p>';
+			__( 'Click below to go to the football pool and predict your scores. Good luck!', 'football-pool' ),
+			'</p>';
 		echo '<p style="text-align:center"><a href="', Football_Pool::get_page_link( 'pool' ), '">',
 			'<img src="', $img, '" alt="', __( 'Fill in your predictions.', 'football-pool' ), '"></a></p>';
 	}
@@ -868,12 +874,12 @@ class Football_Pool {
 		return $title;
 	}
 	
-	// if theme supports the wp_head action then add some images
+	// If theme supports the wp_head action then add some images
 	public static function change_html_head() {
 		$icon_dir = esc_url( FOOTBALLPOOL_ASSETS_URL . 'favicons/' );
 		
 		if ( Football_Pool_Utils::get_fp_option( 'use_favicon', 0, 'int' ) === 1 ) {
-			// made with http://www.favicomatic.com
+			// Made with http://www.favicomatic.com
 			echo "\n<link rel='apple-touch-icon-precomposed' sizes='57x57' href='{$icon_dir}apple-touch-icon-57x57.png'>";
 			echo "\n<link rel='apple-touch-icon-precomposed' sizes='114x114' href='{$icon_dir}apple-touch-icon-114x114.png'>";
 			echo "\n<link rel='apple-touch-icon-precomposed' sizes='72x72' href='{$icon_dir}apple-touch-icon-72x72.png'>";
@@ -917,7 +923,7 @@ class Football_Pool {
 			$newpage = [];
 			$newpage['post_title'] = __( $page['title'], 'football-pool' );
 			$newpage['post_name'] = $page['slug'];
-			$newpage['post_content'] = isset( $page['text'] ) ? $page['text'] : '';
+			$newpage['post_content'] = $page['text'] ?? '';
 			$newpage['post_status'] = 'publish';
 			$newpage['post_type'] = 'page';
 			$newpage['post_author'] = $current_user->ID;
@@ -936,7 +942,7 @@ class Football_Pool {
 			$page_id = wp_insert_post( $newpage );
 			
 			Football_Pool_Utils::update_fp_option( "page_id_{$page['slug']}", $page_id );
-			return $page_id;
+			//return $page_id;
 		}
 	}
 	

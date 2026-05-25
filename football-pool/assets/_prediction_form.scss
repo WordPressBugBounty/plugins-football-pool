@@ -1,3 +1,4 @@
+//noinspection SassScssResolvedByNameOnly
 div.bonus {
 	/*border-bottom: 1px solid #000;*/
 	background-color: #f9f9f9;
@@ -226,6 +227,7 @@ div.buttonblock {
 	margin: 1em 0 3em;
 }
 
+//noinspection SassScssResolvedByNameOnly
 @media ( max-width: $mobile-width ) {
 	/* bonus question footer */
 	div.bonus div.bonus-card-footer {

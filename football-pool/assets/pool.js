@@ -74,7 +74,8 @@ jQuery( document ).ready( function() {
 					if ( FootballPool.check_for_unsaved_changes() === false ) {
 						// Cancel the event as stated by the standard.
 						e.preventDefault();
-						// Chrome requires returnValue to be set.
+						// todo: we may want to remove this deprecated returnValue at some point
+						// Chrome used to require returnValue to be set.
 						e.returnValue = FootballPool_i18n.unsaved_changes_message;
 					}
 				}
@@ -427,20 +428,44 @@ const FootballPool = ( function( $ ) {
 	}
 
 	// todo: check if we can adjust for the client timezone
-	function do_countdown( el, extra_text, year, month, day, hour, minute, second, format_type, format_string ) {
-		const date_to = new Date( year, month - 1, day, hour, minute, second ).getTime();
+	function countdown( data ) {
+		const required_data_keys =
+				['id', 'extra_text', 'year', 'month', 'day', 'hour', 'min', 'sec', 'format', 'format_string'];
+		const data_check = required_data_keys.every(
+				key => data.hasOwnProperty( key ) && data[key] !== undefined && data[key] !== null
+		);
+
+		if ( ! data_check ) return;
+
+		// Run immediately
+		do_countdown( data );
+		// And define the loop
+		window.setInterval( function() { do_countdown( data ); }, 1000 );
+	};
+
+	function do_countdown( data ) {
+		const el = '#' + data.id;
+
+		const date_to = new Date( data.year, data.month - 1, data.day, data.hour, data.min, data.sec ).getTime();
 		const date_now = new Date().getTime();
 		let diff = Math.abs( Math.round( ( date_to - date_now ) / 1000 ) );
-		
+
 		let pre = '', post = '', counter = '';
 		let d = 0, h = 0, m = 0, s = 0;
 		let days, hrs, min, sec;
-		
-		if ( format_string === '' || format_string === null ) {
+
+		let format_string = data.format_string;
+		if ( format_string === '' ) {
 			format_string = '{d} {days}, {h} {hrs}, {m} {min}, {s} {sec}';
 		}
-		
-		if ( extra_text === null ) {
+
+		let extra_text = data.extra_text;
+		const required_data_keys =
+				['pre_before', 'post_before', 'pre_after', 'post_after'];
+		const data_check = required_data_keys.every(
+				key => extra_text.hasOwnProperty( key ) && extra_text[key] !== undefined && extra_text[key] !== null
+		);
+		if ( ! data_check ) {
 			extra_text = {
 				'pre_before' : i18n.count_pre_before,
 				'post_before' : i18n.count_post_before,
@@ -456,8 +481,8 @@ const FootballPool = ( function( $ ) {
 			pre = extra_text.pre_before;
 			post = extra_text.post_before;
 		}
-		
-		switch ( format_type ) {
+
+		switch ( data.format ) {
 			case 1: // only seconds
 				s = diff;
 				break;
@@ -490,8 +515,11 @@ const FootballPool = ( function( $ ) {
 						s = diff;
 				}
 				break;
+			default:
+				// When this happens we have an undefined format!
+				// console.log('failed to get the format');
 		}
-		
+
 		// Set the correct texts for the day, hour, minute and second value
 		days = ( d === 1 ? i18n.count_day : i18n.count_days );
 		hrs  = ( h === 1 ? i18n.count_hour : i18n.count_hours );
@@ -572,7 +600,7 @@ const FootballPool = ( function( $ ) {
 		change_joker: change_joker,
 		change_prediction: change_prediction,
 		update_chars: update_chars,
-		countdown: do_countdown,
+		countdown: countdown,
 		charts_user_toggle: charts_user_toggle,
 		set_max_answers: set_max_answers,
 		do_submit: do_submit,

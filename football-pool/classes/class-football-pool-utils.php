@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -57,14 +57,152 @@ class Football_Pool_Utils {
 	}
 
 	/**
-	 * Converts a string for XSS safe outputting
-	 * https://www.owasp.org/index.php/PHP_Security_Cheat_Sheet#XSS_Cheat_Sheet
+	 * Safely encodes a PHP value for direct embedding into inline JavaScript.
 	 *
-	 * @param  mixed  $data
-	 * @param  string|null  $encoding
-	 * @param  bool|null  $allow_overwrite
+	 * This method normalizes the input (to decode obfuscated sequences such as
+	 * hex or octal escapes) and then uses `wp_json_encode()` with strict flags
+	 * to ensure the result is safe for inclusion in an inline <script> tag.
 	 *
-	 * @return string
+	 * In particular:
+	 * - `JSON_HEX_TAG` prevents raw `</script>` sequences from closing the script block.
+	 * - `JSON_HEX_AMP`, `JSON_HEX_APOS`, and `JSON_HEX_QUOT` ensure characters
+	 *   like `&`, `'`, and `"` are safely escaped.
+	 * - Line separator characters U+2028 and U+2029 are replaced with safe escapes
+	 *   for maximum JavaScript compatibility.
+	 *
+	 * The returned value should be injected directly into JavaScript without
+	 * additional quoting or escaping.
+	 *
+	 * Example:
+	 * ```php
+	 * $safe = Football_Pool_Utils::to_js_json( $user_input );
+	 * echo "<script>console.log({$safe});</script>";
+	 * ```
+	 *
+	 * @param mixed $value Any scalar or structured value to encode (string, array, object, etc.).
+	 * @return string JSON-encoded, JavaScript-safe representation of the input.
+	 */
+	public static function to_js_json( $value ): string {
+		// Remove obfuscation
+		$value = Football_Pool_Utils::normalize_input( $value );
+
+		// Encode for safe inline <script>:
+		// JSON_HEX_TAG prevents </script>, the rest prevents & ' "
+		$json = wp_json_encode(
+			$value,
+			JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+		);
+
+		// Extra security: JS line separators
+		// (not very common, but better safe than sorry).
+		return str_replace( ["\u2028", "\u2029"], ['\u2028', '\u2029'], $json );
+	}
+
+	/**
+	 * Normalize a potentially obfuscated string into its plain-text form.
+	 *
+	 * This method repeatedly decodes common encoding tricks that attackers use
+	 * to bypass naive XSS filters until the input no longer changes.
+	 *
+	 * Supported decoding steps:
+	 *  - HTML entities (e.g. &lt;, &#60;, &#x3c;)
+	 *  - Hexadecimal escape sequences (\xHH)
+	 *  - Unicode escape sequences (\uHHHH)
+	 *
+	 * By normalizing before applying `htmlspecialchars()`, all dangerous input
+	 * (even if double-encoded or nested) is safely reduced to its simplest form.
+	 *
+	 * Example:
+	 *   Input:  "&#x26;#x3c;script&#x26;#x3e;"
+	 *   Output: "<script>"
+	 *
+	 * @param string $data Raw input string that may contain encoded payloads.
+	 * @return string The normalized plain-text string, ready for safe escaping.
+	 */
+	public static function normalize_input( string $data ): string {
+		$previous = null;
+
+		while ( $previous !== $data ) {
+			$previous = $data;
+
+			// 1. Decode HTML entities
+			$data = html_entity_decode( $data, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+
+			// 2. Decode \xHH hex escape sequences (backslash present)
+			$data = preg_replace_callback(
+				'/\\\\x([0-9a-f]{2})/i',
+				fn( $m ) => chr( hexdec( $m[1] ) ),
+				$data
+			);
+
+			// 3. Decode xHH sequences (when backslash stripped)
+			$data = preg_replace_callback(
+				'/x([0-9a-f]{2})/i',
+				fn( $m ) => chr( hexdec( $m[1] ) ),
+				$data
+			);
+
+			// 4. Decode octal sequences \0NNN (1-3 digits)
+			$data = preg_replace_callback(
+				'/\\\\0([0-7]{1,3})/',
+				fn( $m ) => chr( octdec( $m[1] ) ),
+				$data
+			);
+
+			// 5. Decode \uHHHH Unicode sequences
+			$data = preg_replace_callback(
+				'/\\\\u([0-9a-f]{4})/i',
+				fn( $m ) => mb_convert_encoding( pack( 'n', hexdec( $m[1] ) ), 'UTF-8', 'UTF-16BE' ),
+				$data
+			);
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Strip obfuscation techniques (hex, unicode, octal, HTML entities, tags).
+	 * Aggressively removes anything that could be used to sneak in script tags or events.
+	 *
+	 * @param  string  $input Raw user input
+	 *
+	 * @return string Cleaned string, with suspicious content removed
+	 */
+	public static function strip_obfuscation( string $input ): string {
+		if ( $input === '' ) return '';
+
+		$str = $input;
+
+		$str = preg_replace( '/\\\\x[0-9a-f]{2}/i', '', $str );      // \x3c
+		$str = preg_replace( '/\\\\[0-7]{1,3}/', '', $str );         // \74
+		$str = preg_replace( '/\\\\u[0-9a-f]{4}/i', '', $str );      // \u003c
+		$str = preg_replace( '/&#x?[0-9a-f]+;?/i', '', $str );       // &#60; or &#x3c;
+		$str = preg_replace( '/&[a-z]+;/i', '', $str );              // &lt;
+		$str = strip_tags( $str );                                   // <script>
+		$str = preg_replace( '/on\w+\s*=\s*["\'][^"\']*["\']/i', '', $str );
+		$str = preg_replace( '/javascript:[^"\']*/i', '', $str );
+		$str = preg_replace( '/[\x00-\x1F\x7F]/u', '', $str );       // control chars
+
+		return $str;
+	}
+
+	/**
+	 * Safely escape user-supplied input to prevent XSS in HTML output.
+	 *
+	 * This method first normalizes the input by decoding any obfuscations
+	 * (HTML entities, hex escapes, Unicode escapes, etc.) to ensure that
+	 * malicious payloads like "<script>" cannot bypass sanitization through
+	 * double-encoding tricks. After normalization, the result is escaped with
+	 * `htmlspecialchars()` for safe rendering in HTML.
+	 *
+	 * If `$allow_overwrite` is true, no escaping will be applied and the raw
+	 * input is returned. This can be useful for cases where controlled HTML
+	 * output is explicitly allowed.
+	 *
+	 * @param mixed       $data            Input data (string or null) to sanitize.
+	 * @param string|null $encoding        Character encoding to use (default: FOOTBALLPOOL_ENCODING).
+	 * @param bool|null   $allow_overwrite If true, skip escaping and return the input as-is.
+	 * @return string                      The sanitized, HTML-safe string.
 	 */
 	public static function xssafe(
 		$data,
@@ -75,6 +213,10 @@ class Football_Pool_Utils {
 			if ( is_null( $data ) ) {
 				$data = '';
 			}
+
+			// Normalize different encodings first
+			$data = self::normalize_input( $data );
+
 			$data = htmlspecialchars( $data, ENT_QUOTES | ENT_HTML401, $encoding );
 		}
 
@@ -132,11 +274,11 @@ class Football_Pool_Utils {
 	 */
 	public static function get_user_meta( array $user_meta, string $key, ?string $default = '' ) {
 		$output = $default;
-		if ( is_array( $user_meta ) && isset( $user_meta[ $key ] )
-		     && is_array( $user_meta[ $key ] )
-		     && isset( $user_meta[ $key ][0] )
-		) {
-			$output = $user_meta[ $key ][0];
+
+		if ( array_key_exists( $key, $user_meta ) ) {
+			if ( is_array( $user_meta[$key] ) && isset( $user_meta[$key][0] ) ) {
+				$output = $user_meta[$key][0];
+			}
 		}
 
 		return $output;
@@ -329,9 +471,9 @@ class Football_Pool_Utils {
 		$output = sprintf( '<select name="%s" id="%s" class="%s">', $name, $id, $css_class );
 		foreach ( $options as $val => $text ) {
 			$output .= sprintf(
-				'<option value="%s"%s>%s</option>',
-				$val,
+				'<option%s value="%s">%s</option>',
 				( $val == $selected_val ) ? ' selected="selected"' : '',
+				$val,
 				$text
 			);
 		}
@@ -854,12 +996,12 @@ class Football_Pool_Utils {
 	 * (one micro second = one millionth of a second).
 	 *
 	 * @param  mixed  $var
-	 * @param  string|null  $type
+	 * @param  string|array|null  $type
 	 * @param  int|null  $sleep
 	 *
 	 * @return string|void
 	 */
-	public static function debug( $var, ?string $type = 'echo', ?int $sleep = 0 ) {
+	public static function debug( $var, $type = 'echo', ?int $sleep = 0 ) {
 		if ( defined( 'FOOTBALLPOOL_DEBUG_FORCE' ) ) {
 			$type = FOOTBALLPOOL_DEBUG_FORCE;
 		} else {

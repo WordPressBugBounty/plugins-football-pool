@@ -372,8 +372,14 @@ div.ranking-definition {
 div.ranking-log-rest {
 	display: none;
 }
+
 .cboxContent div.ranking-log-rest {
 	display: block;
+}
+#cboxClose {
+	position: absolute;
+	bottom: 0;
+	right: 0;
 }
 
 div.ranking-log span {

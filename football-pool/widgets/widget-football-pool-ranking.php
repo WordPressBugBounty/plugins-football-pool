@@ -3,7 +3,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -28,54 +28,57 @@
 defined( 'ABSPATH' ) or die( 'Cannot access widgets directly.' );
 add_action( 'widgets_init', function() { register_widget( 'Football_Pool_Ranking_Widget' ); } );
 
-// dummy var for translation files
-$fp_translate_this = __( 'Ranking Widget', 'football-pool' );
-$fp_translate_this = __( 'this widget displays the top X players in the pool.', 'football-pool' );
-$fp_translate_this = __( 'standing', 'football-pool' );
-$fp_translate_this = __( 'Ranking', 'football-pool' );
-$fp_translate_this = __( 'Number of users to show', 'football-pool' );
-$fp_translate_this = __( 'Show players from this league', 'football-pool' );
-
 class Football_Pool_Ranking_Widget extends Football_Pool_Widget {
-	protected $widget = array(
-		'name' => 'Ranking Widget',
-		'description' => 'this widget displays the top X players in the pool.',
-		'do_wrapper' => true, 
-		
-		'fields' => array(
-			array(
-				'name' => 'Title',
-				'desc' => '',
-				'id' => 'title',
-				'type' => 'text',
-				'std' => 'standing'
-			),
-			array(
-				'name'    => 'Ranking',
-				'desc' => '',
-				'id'      => 'ranking_id',
-				'type'    => 'select',
-				'options' => [] // get data from the database later on
-			),
-			array(
-				'name' => 'Number of users to show',
-				'desc' => '',
-				'id' => 'num_users',
-				'type' => 'text',
-				'std' => '5'
-			),
-			array(
-				'name'    => 'Show players from this league',
-				'desc' => '',
-				'id'      => 'league',
-				'type'    => 'select',
-				'options' => [] // get data from the database later on
-			),
-		)
-	);
+	protected $widget = [];
+
+	public function __construct() {
+		$this->widget = array(
+			'name' => __( 'Ranking Widget', 'football-pool' ),
+			'description' => __( 'this widget displays the top X players in the pool.', 'football-pool' ),
+			'do_wrapper' => true,
+
+			'fields' => array(
+				array(
+					'name' => __( 'Title', 'football-pool' ),
+					'desc' => '',
+					'id' => 'title',
+					'type' => 'text',
+					'std' => __( 'standing', 'football-pool' )
+				),
+				array(
+					'name'    => __( 'Ranking', 'football-pool' ),
+					'desc' => '',
+					'id'      => 'ranking_id',
+					'type'    => 'select',
+					'options' => [] // get data from the database later on
+				),
+				array(
+					'name' => __( 'Number of users to show', 'football-pool' ),
+					'desc' => '',
+					'id' => 'num_users',
+					'type' => 'text',
+					'std' => '5'
+				),
+				array(
+					'name'    => __( 'Show players from this league', 'football-pool' ),
+					'desc' => '',
+					'id'      => 'league',
+					'type'    => 'select',
+					'options' => [] // get data from the database later on
+				),
+			)
+		);
+
+		$classname = str_replace( '_', '', get_class( $this ) );
+		parent::__construct(
+			$classname,
+			$this->widget['name'] ?? $classname,
+			$this->widget['description']
+		);
+	}
 
 	public function initiate_widget_dynamic_fields() {
-		$pool = new Football_Pool_Pool();
+		$pool = footballpool();
 		// get the ranking-options from the database
 		$rankings = $pool->get_rankings();
 		$options = [];
@@ -93,7 +96,7 @@ class Football_Pool_Ranking_Widget extends Football_Pool_Widget {
 	}
 
 	public function html( string $title, array $args, array $instance ) {
-		global $pool;
+		$pool = footballpool();
 
 		extract( $args );
 		
@@ -120,15 +123,5 @@ class Football_Pool_Ranking_Widget extends Football_Pool_Widget {
 		} else {
 			printf( '<p>%s</p>', __( 'No match data available.', 'football-pool' ) );
 		}
-	}
-	
-	public function __construct() {
-		$classname = str_replace( '_', '', get_class( $this ) );
-		
-		parent::__construct( 
-			$classname, 
-			$this->widget['name'] ?? $classname,
-			$this->widget['description']
-		);
 	}
 }

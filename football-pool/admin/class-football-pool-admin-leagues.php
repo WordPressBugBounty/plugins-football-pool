@@ -2,7 +2,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -105,9 +105,8 @@ class Football_Pool_Admin_Leagues extends Football_Pool_Admin {
 		echo '</p>';
 	}
 	
-	private static function get_league( $id ) {
-		global $pool;
-		$leagues = $pool->leagues;
+	private static function get_league( $id ): ?array {
+		$leagues = footballpool()->leagues;
 		if ( array_key_exists( $id, $leagues ) ) {
 			$output = array(
 							'name' => $leagues[$id]['league_name'],
@@ -125,8 +124,7 @@ class Football_Pool_Admin_Leagues extends Football_Pool_Admin {
 	 */
 	private static function get_leagues(): array
 	{
-		global $pool;
-		$leagues = $pool->get_leagues( true );
+		$leagues = footballpool()->get_leagues( true );
 		$output = array();
 		foreach ( $leagues as $league ) {
 			$output[] = array(
@@ -139,8 +137,7 @@ class Football_Pool_Admin_Leagues extends Football_Pool_Admin {
 	}
 	
 	private static function view() {
-		global $pool;
-		if ( ! $pool->has_leagues ) {
+		if ( ! footballpool()->has_leagues ) {
 			self::notice( __( '<strong>Important:</strong> at this moment you are not using leagues. This may be caused by the fact that you didn\'t add any leagues in the admin, or because you changed this setting in the <a href="?page=footballpool-options">plugin options</a>.', 'football-pool' ), 'warning' );
 		}
 		
@@ -173,7 +170,12 @@ class Football_Pool_Admin_Leagues extends Football_Pool_Admin {
 			'text' => __( 'Search', 'football-pool' ),
 			'value' => $search,
 		);
-		$bulkactions[] = array( 'delete', __( 'Delete' ), __( 'You are about to delete one or more leagues.', 'football-pool' ) . ' ' . __( 'Are you sure? `OK` to delete, `Cancel` to stop.', 'football-pool' ) );
+		$bulkactions[] = array(
+			'delete',
+			__( 'Delete' ),
+			__( 'You are about to delete one or more leagues.', 'football-pool' ) .
+				' ' . __( 'Are you sure? `OK` to delete, `Cancel` to stop.', 'football-pool' )
+		);
 		self::list_table( $cols, $rows, $bulkactions, null, false, $search_box );
 	}
 

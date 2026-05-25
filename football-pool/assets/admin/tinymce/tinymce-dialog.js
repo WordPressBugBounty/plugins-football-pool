@@ -86,7 +86,7 @@ var FootballPoolTinyMCE = ( function( $ ) {
 				if ( format_string !== '' ) atts += ' format_string="' + format_string + '"';
 				break;
 			case 'fp-group':
-				group = $( '#group-id', scope ).val();
+				group = $( '#group-group-id', scope ).val();
 				if ( group > 0 ) atts += ' id=' + group;
 				break;
 			case 'fp-ranking':

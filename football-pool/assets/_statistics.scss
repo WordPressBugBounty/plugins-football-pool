@@ -93,6 +93,7 @@ table.prediction-table-questions {
 	width: 390px;
 }
 
+//noinspection SassScssResolvedByNameOnly
 @media ( min-width: ($mobile-width + 1) ) {
 	.pie-chart.stats-page { max-width: 50%; }
 }

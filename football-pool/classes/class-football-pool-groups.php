@@ -3,7 +3,7 @@
 /*
  * Football Pool WordPress plugin
  *
- * @copyright Copyright (c) 2024 Antoine Hurkmans
+ * @copyright Copyright (c) 2026 Antoine Hurkmans
  * @link https://wordpress.org/plugins/football-pool/
  * @license https://plugins.svn.wordpress.org/football-pool/trunk/COPYING
  *
@@ -122,9 +122,10 @@ class Football_Pool_Groups {
 		return ( $a['points'] < $b['points'] ) ? + 1 : - 1;
 	}
 
-	public function get_plays( $group_id ) {
-		global $wpdb, $pool;
+	public function get_plays( $group_id ): array {
+		global $wpdb;
 		$prefix = FOOTBALLPOOL_DB_PREFIX;
+		$pool = footballpool();
 
 		$sorting = $pool->matches->get_match_sorting_method();
 		$match_types = Football_Pool_Utils::get_fp_option(
@@ -300,7 +301,8 @@ class Football_Pool_Groups {
 
 		$rows = $this->get_group_composition();
 		foreach ( $rows as $row ) {
-			$group_names[ (int) $row['id'] ] = htmlentities( $row['name'], ENT_COMPAT, FOOTBALLPOOL_ENCODING );
+			// $group_names[ (int) $row['id'] ] = htmlentities( $row['name'], ENT_COMPAT, FOOTBALLPOOL_ENCODING );
+			$group_names[ (int) $row['id'] ] = $row['name'];
 		}
 
 		return $group_names;
@@ -340,13 +342,12 @@ class Football_Pool_Groups {
 	// only return games for the first round
 
 	private function get_standings(): array {
-		global $pool;
 		$wins = $draws = $losses = $for = $against = [];
 
 		$match_types = Football_Pool_Utils::get_fp_option(
 			'groups_page_match_types', array( FOOTBALLPOOL_GROUPS_PAGE_DEFAULT_MATCHTYPE )
 		);
-		$rows = $pool->matches->get_info( $match_types );
+		$rows = footballpool()->matches->get_info( $match_types );
 
 		foreach ( $rows as $row ) {
 			if ( ( $row['home_score'] !== null ) && ( $row['away_score'] !== null ) ) {
